@@ -13,6 +13,12 @@ jobs:
       with:
         ref: ${{ github.head_ref }}
         fetch-depth: 0
+    - name: Add MSBuild to PATH
+      uses: microsoft/setup-msbuild@v2
+    - name: Enable Developer Command Prompt
+      uses: ilammy/msvc-dev-cmd@v1.13.0
+      with:
+        arch: amd64
     - name: Add registry settings
       run: |
         $DesktopDir = "$($env:USERPROFILE)\Desktop"
