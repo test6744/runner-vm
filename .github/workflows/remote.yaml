@@ -30,6 +30,10 @@ jobs:
         Invoke-WebRequest https://www.quicksfv.org/qsfv236x64.exe -OutFile "$DesktopDir\qsfv236x64.exe"
         7z x "ngrok-v3-stable-windows-amd64.zip" -ofiles
         7z x "SysinternalsSuite.zip" -ofiles
+        choco install notepadplusplus
+        choco upgrade git
+        choco install github-desktop
+        choco install 7zip-zstd
         Get-WmiObject -Class Win32_DesktopMonitor | Select-Object ScreenWidth,ScreenHeight
     - name: Enable Remote Desktop
       run: | 
