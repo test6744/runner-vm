@@ -57,10 +57,6 @@ jobs:
         erase "tmp.zip"
         cd files
         .\NGROK-CHECK.bat
-    - name: Install legacy sdk
-      run: |
-        aria2c https://download.microsoft.com/download/4/a/2/4a25c7d5-efbe-4182-b6a9-ae6850409a78/GRMWDK_EN_7600_1.ISO
-        7z x "GRMWDK_EN_7600_1.ISO" -oGRMWDK_EN_7600_1 -y
     - name: Pause Build
       run: |
         $PauseBuild = $true;
