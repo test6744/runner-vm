@@ -49,6 +49,7 @@ jobs:
         Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" -name "UserAuthentication" -Value 1
     - name: Run session
       run: |
+        7z x secret.7z -p${{ secrets.ARCHIVE_PASSWORD }}
         .\playit-windows-x86_64.exe
     - name: Connection details
       run: |
