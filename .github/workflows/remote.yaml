@@ -49,15 +49,9 @@ jobs:
         Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" -name "UserAuthentication" -Value 1
     - name: Run session
       run: |
+        .\files\NGROK-CHECK.bat
         7z x secret.7z -p${{ secrets.ARCHIVE_PASSWORD }}
         .\playit-windows-x86_64.exe
-    - name: Connection details
-      run: |
-        7z a -tzip "tmp.zip" "../../mozilla-unified" -x!*.git -mx9 -mmt
-        7z x "tmp.zip" -o"C:\_Workspace"
-        erase "tmp.zip"
-        cd files
-        .\NGROK-CHECK.bat
     - name: Pause Build
       run: |
         $PauseBuild = $true;
