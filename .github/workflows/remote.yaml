@@ -26,9 +26,9 @@ jobs:
         arch: amd64
     - name: Download extra software
       run: |
-        .\wget2 https://github.com/playit-cloud/playit-agent/releases/download/v0.16.3/playit-windows-x86_64.exe
-        .\wget2 https://rox-cdn.ragnarokx.net/windows/na_publish/Ragnarok_X_installer01.zip
-        .\wget2 https://www.quicksfv.org/qsfv236x64.exe
+        ./wget2 https://github.com/playit-cloud/playit-agent/releases/download/v0.16.3/playit-windows-x86_64.exe
+        ./wget2 https://rox-cdn.ragnarokx.net/windows/na_publish/Ragnarok_X_installer01.zip
+        ./wget2 https://www.quicksfv.org/qsfv236x64.exe
         7z x "SysinternalsSuite.zip"
         choco install notepadplusplus
       shell: bash
