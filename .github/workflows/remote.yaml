@@ -27,10 +27,11 @@ jobs:
         arch: amd64
     - name: Download extra software
       run: |
-        wget --no-check-certificate https://github.com/playit-cloud/playit-agent/releases/download/v0.16.3/playit-windows-x86_64.exe
-        wget --no-check-certificate https://rox-cdn.ragnarokx.net/windows/na_publish/Ragnarok_X_installer01.zip
-        wget --no-check-certificate https://www.quicksfv.org/qsfv236x64.exe
-        7z x "SysinternalsSuite.zip"
+        wget https://github.com/playit-cloud/playit-agent/releases/download/v0.16.3/playit-windows-x86_64.exe
+        wget https://rox-cdn.ragnarokx.net/windows/na_publish/Ragnarok_X_installer01.zip
+        wget https://www.quicksfv.org/qsfv236x64.exe
+        wget https://download.sysinternals.com/files/SysinternalsSuite.zip
+        7z x SysinternalsSuite.zip
         choco install notepadplusplus
       shell: bash
     - name: Add registry settings
