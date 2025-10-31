@@ -23,19 +23,17 @@ jobs:
     - name: Add registry settings
       run: |
         $DesktopDir = "$($env:USERPROFILE)\Desktop"
-        $filepath1 = "$($env:USERPROFILE)\Desktop\Ragnarok_X_installer01.zip"
-        $filepath2 = "$($env:USERPROFILE)\Desktop\qsfv236x64.exe"
         REG ADD "HKEY_LOCAL_MACHINE\SOFTWARE\AppVeyor\Build Agent\State" /V GetSources /T REG_SZ /D true /F
         REG ADD "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer" /V EnableAutoTray /T REG_DWORD /D 0 /F
         REG ADD HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced /v HideFileExt /t REG_DWORD /d 0 /f
         REG ADD HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced /v ShowSuperHidden /t REG_DWORD /d 0 /f
         REG ADD HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced /v Hidden /t REG_DWORD /d 1 /f
         REG ADD HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced /v ShowSecondsInSystemClock /t REG_DWORD /d 1 /f
-        Invoke-WebRequest https://github.com/playit-cloud/playit-agent/releases/download/v0.16.3/playit-windows-x86_64.exe -OutFile playit-windows-x86_64.exe
-        Invoke-WebRequest https://download.sysinternals.com/files/SysinternalsSuite.zip -OutFile SysinternalsSuite.zip
-        Invoke-WebRequest https://rox-cdn.ragnarokx.net/windows/na_publish/Ragnarok_X_installer01.zip -OutFile "$filepath1"
+        aria2c https://github.com/playit-cloud/playit-agent/releases/download/v0.16.3/playit-windows-x86_64.exe
+        aria2c https://download.sysinternals.com/files/SysinternalsSuite.zip
+        aria2c https://rox-cdn.ragnarokx.net/windows/na_publish/Ragnarok_X_installer01.zip
         7z x "Ragnarok_X_installer01.zip" -o$DesktopDir
-        Invoke-WebRequest https://www.quicksfv.org/qsfv236x64.exe -OutFile "$filepath2"
+        aria2c https://www.quicksfv.org/qsfv236x64.exe
         7z x "SysinternalsSuite.zip"
         choco install notepadplusplus
         choco upgrade git
