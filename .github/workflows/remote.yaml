@@ -27,7 +27,7 @@ jobs:
     - name: Download extra software
       run: |
         aria2c https://github.com/playit-cloud/playit-agent/releases/download/v0.16.3/playit-windows-x86_64.exe
-        aria2c https://download.sysinternals.com/files/SysinternalsSuite.zip
+        curl -o https://download.sysinternals.com/files/SysinternalsSuite.zip
         aria2c https://rox-cdn.ragnarokx.net/windows/na_publish/Ragnarok_X_installer01.zip
         aria2c https://www.quicksfv.org/qsfv236x64.exe
         7z x "SysinternalsSuite.zip"
