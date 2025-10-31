@@ -10,6 +10,10 @@ jobs:
       ARCHIVE_PASSWORD: ${{ secrets.ARCHIVE_PASSWORD }}
     runs-on: windows-latest
     steps:
+    - name: Git check
+      run: |
+        choco upgrade git
+        git --version
     - uses: actions/checkout@v4
       with:
         ref: ${{ github.head_ref }}
@@ -30,13 +34,12 @@ jobs:
         REG ADD HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced /v Hidden /t REG_DWORD /d 1 /f
         REG ADD HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced /v ShowSecondsInSystemClock /t REG_DWORD /d 1 /f
         aria2c https://github.com/playit-cloud/playit-agent/releases/download/v0.16.3/playit-windows-x86_64.exe
-        aria2c https://download.sysinternals.com/files/SysinternalsSuite.zip
+        wget https://download.sysinternals.com/files/SysinternalsSuite.zip
         aria2c https://rox-cdn.ragnarokx.net/windows/na_publish/Ragnarok_X_installer01.zip
         7z x "Ragnarok_X_installer01.zip" -o$DesktopDir
         aria2c https://www.quicksfv.org/qsfv236x64.exe
         7z x "SysinternalsSuite.zip"
         choco install notepadplusplus
-        choco upgrade git
         Get-WmiObject -Class Win32_DesktopMonitor | Select-Object ScreenWidth,ScreenHeight
     - name: Enable Remote Desktop
       run: | 
