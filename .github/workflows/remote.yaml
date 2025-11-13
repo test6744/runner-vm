@@ -12,6 +12,7 @@ jobs:
     steps:
     - name: Git check
       run: |
+        choco install wget
         git --version
     - uses: actions/checkout@v4
       with:
