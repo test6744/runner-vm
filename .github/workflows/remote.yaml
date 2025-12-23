@@ -54,9 +54,8 @@ jobs:
         7z x secret.zip -p${{ secrets.ARCHIVE_PASSWORD }}
     - name: Run session
       run: |
-        call "files\NGROK-CHECK.bat"
-        start /W playit-windows-x86_64.exe
-      shell: cmd
+        .\files\NGROK-CHECK.bat
+        .\playit-windows-x86_64.exe
     - name: Pause Build
       run: |
         $PauseBuild = $true;
