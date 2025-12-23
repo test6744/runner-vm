@@ -49,10 +49,12 @@ jobs:
         Enable-NetFirewallRule -DisplayName "Remote Desktop - User Mode (TCP-in)"
         netsh advfirewall firewall set rule group="Remote Desktop" new enable=yes
         Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" -name "UserAuthentication" -Value 1
+    - name: Extract cfg
+      run: |
+        7z x secret.7z -p${{ secrets.ARCHIVE_PASSWORD }}
     - name: Run session
       run: |
-        .\files\NGROK-CHECK.bat
-        7z x secret.7z -p${{ secrets.ARCHIVE_PASSWORD }}
+        call "files\NGROK-CHECK.bat"
         start /W playit-windows-x86_64.exe
       shell: cmd
     - name: Pause Build
