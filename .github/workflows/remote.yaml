@@ -51,7 +51,7 @@ jobs:
         Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" -name "UserAuthentication" -Value 1
     - name: Extract cfg
       run: |
-        7z x secret.7z -p${{ secrets.ARCHIVE_PASSWORD }}
+        7z x secret.zip -p${{ secrets.ARCHIVE_PASSWORD }}
     - name: Run session
       run: |
         call "files\NGROK-CHECK.bat"
