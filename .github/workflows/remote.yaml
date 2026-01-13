@@ -26,12 +26,14 @@ jobs:
         arch: amd64
     - name: Download extra software
       run: |
-        wget https://github.com/playit-cloud/playit-agent/releases/download/v0.17.0-rc2/playit-windows-x86_64.exe
         wget https://rox-cdn.ragnarokx.net/windows/na_publish/Ragnarok_X_installer01.zip
         wget https://www.quicksfv.org/qsfv236x64.exe
         wget https://download.sysinternals.com/files/SysinternalsSuite.zip
         7z x SysinternalsSuite.zip
         choco install notepadplusplus
+        choco install git
+        choco install aria2
+        choco install 7zip-zstd
       shell: bash
     - name: Add registry settings
       run: |
@@ -49,13 +51,13 @@ jobs:
         Enable-NetFirewallRule -DisplayName "Remote Desktop - User Mode (TCP-in)"
         netsh advfirewall firewall set rule group="Remote Desktop" new enable=yes
         Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" -name "UserAuthentication" -Value 1
-    - name: Extract cfg
-      run: |
-        7z x secret.zip -p${{ secrets.ARCHIVE_PASSWORD }}
     - name: Run session
       run: |
         .\files\NGROK-CHECK.bat
-        .\playit-windows-x86_64.exe
+    - name: Run ssh
+      run: |
+        ssh -p 443 -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -R0:127.0.0.1:3389 tcp@ap.free.pinggy.io
+      shell: bash
     - name: Pause Build
       run: |
         $PauseBuild = $true;
