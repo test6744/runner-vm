@@ -31,7 +31,6 @@ jobs:
         wget https://download.sysinternals.com/files/SysinternalsSuite.zip
         7z x SysinternalsSuite.zip
         choco install notepadplusplus
-        choco upgrade git
         choco install aria2
         choco install 7zip-zstd
       shell: bash
