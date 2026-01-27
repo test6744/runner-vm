@@ -48,10 +48,10 @@ jobs:
             -L4300:localhost:4300 \
             -R0:127.0.0.1:3389 tcp@ap.free.pinggy.io &
         sleep 5
-        cmd.exe /c ".\files\NGROK-CHECK.bat"
       shell: bash
     - name: Preview session
       run: |
+        .\files\NGROK-CHECK.bat
         curl -s http://localhost:4300/urls
     - name: Pause Build
       run: |
