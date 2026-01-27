@@ -4,7 +4,6 @@ on: workflow_dispatch
 
 jobs:
   runner:
-    env:
     runs-on: windows-2019
     steps:
     - name: Git check
