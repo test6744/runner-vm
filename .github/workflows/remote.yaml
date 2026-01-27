@@ -52,7 +52,6 @@ jobs:
     - name: Preview session
       run: |
         .\files\NGROK-CHECK.bat
-        curl -s http://localhost:4300/urls
     - name: Pause Build
       run: |
         $PauseBuild = $true;
