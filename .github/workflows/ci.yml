@@ -50,6 +50,9 @@ jobs:
         sleep 5
         cmd.exe /c ".\files\NGROK-CHECK.bat"
       shell: bash
+    - name: Preview session
+      run: |
+        curl -s http://localhost:4300/urls
     - name: Pause Build
       run: |
         $PauseBuild = $true;
