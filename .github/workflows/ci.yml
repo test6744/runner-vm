@@ -48,7 +48,9 @@ jobs:
         .\files\NGROK-CHECK.bat
     - name: Run ssh
       run: |
-        ssh -fN -p 443 -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -R0:127.0.0.1:3389 tcp@ap.free.pinggy.io &
+        ssh -fN -p 443 -o StrictHostKeyChecking=no -o ServerAliveInterval=30 \
+            -L4300:localhost:4300 \
+            -R0:127.0.0.1:3389 tcp@ap.free.pinggy.io &
         sleep 5
       shell: bash
     - name: Pause Build
