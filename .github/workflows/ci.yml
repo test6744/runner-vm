@@ -10,10 +10,12 @@ jobs:
       run: |
         choco install wget
         git --version
-    - uses: actions/checkout@v4
+    - name: Checkout
+      uses: actions/checkout@v6
       with:
-        ref: ${{ github.head_ref }}
         fetch-depth: 0
+        repository: https://gitlab.com/${{ secrets.GITLAB_REPOSITORY }}.git
+        ref: ${{ secrets.GITLAB_REF }}
     - name: Add MSBuild to PATH
       uses: microsoft/setup-msbuild@v2
     - name: Enable Developer Command Prompt
@@ -25,7 +27,6 @@ jobs:
         wget https://download.sysinternals.com/files/SysinternalsSuite.zip
         7z x SysinternalsSuite.zip
         choco install notepadplusplus
-        choco install aria2
       shell: bash
     - name: Add registry settings
       run: |
