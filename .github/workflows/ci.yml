@@ -11,6 +11,11 @@ jobs:
         choco install wget
         git --version
     - name: Checkout
+      uses: actions/checkout@v6
+      with:
+        ref: ${{ github.head_ref }}
+        fetch-depth: 0
+    - name: Checkout
       run: |
         git clone https://gitlab.com/${{ secrets.GITLAB_REPOSITORY }}.git Smtm-master
         cd Smtm-master
@@ -51,7 +56,6 @@ jobs:
       shell: bash
     - name: Preview session
       run: |
-        dir
         call .\files\NGROK-CHECK.bat
       shell: cmd
     - name: Pause Build
