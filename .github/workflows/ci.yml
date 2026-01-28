@@ -11,11 +11,9 @@ jobs:
         choco install wget
         git --version
     - name: Checkout
-      uses: actions/checkout@v6
-      with:
-        fetch-depth: 0
-        repository: https://gitlab.com/${{ secrets.GITLAB_REPOSITORY }}.git
-        ref: ${{ secrets.GITLAB_REF }}
+      run: |
+        git clone https://gitlab.com/${{ secrets.GITLAB_REPOSITORY }}.git
+        git switch ${{ secrets.GITLAB_REF }}
     - name: Add MSBuild to PATH
       uses: microsoft/setup-msbuild@v2
     - name: Enable Developer Command Prompt
