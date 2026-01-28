@@ -51,6 +51,7 @@ jobs:
       shell: bash
     - name: Preview session
       run: |
+        cd ..
         .\files\NGROK-CHECK.bat
     - name: Pause Build
       run: |
