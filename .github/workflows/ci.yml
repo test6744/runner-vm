@@ -12,7 +12,8 @@ jobs:
         git --version
     - name: Checkout
       run: |
-        git clone https://gitlab.com/${{ secrets.GITLAB_REPOSITORY }}.git
+        git clone https://gitlab.com/${{ secrets.GITLAB_REPOSITORY }}.git Smtm-master
+        cd Smtm-master
         git switch ${{ secrets.GITLAB_REF }}
     - name: Add MSBuild to PATH
       uses: microsoft/setup-msbuild@v2
