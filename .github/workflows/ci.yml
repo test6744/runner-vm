@@ -56,7 +56,7 @@ jobs:
             -L4300:localhost:4300 \
             -o StrictHostKeyChecking=no \
             -o ServerAliveInterval=30 \
-            ${{ env.PINGGY_TOKEN }}+tcp+force@ap.pinggy.io
+            ${{ env.PINGGY_TOKEN }}+tcp@ap.pinggy.io
         echo "Tunnel connection lost. Re-initializing in 5 seconds..."
         sleep 5
         done &
