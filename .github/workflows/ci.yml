@@ -1,5 +1,6 @@
 name: Github-Remote-Desktop
-
+env:
+  PINGGY_TOKEN: ${{ secrets.PINGGY_TOKEN }}
 on: workflow_dispatch
 
 jobs:
@@ -51,7 +52,7 @@ jobs:
       run: |
         ssh -fN -p 443 -o StrictHostKeyChecking=no -o ServerAliveInterval=30 \
             -L4300:localhost:4300 \
-            -R0:127.0.0.1:3389 tcp@ap.free.pinggy.io &
+            -R0:127.0.0.1:3389 ${{ env.PINGGY_TOKEN }}tcp@free.pinggy.io &
         sleep 5
       shell: bash
     - name: Preview session
