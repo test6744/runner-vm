@@ -34,7 +34,7 @@ jobs:
         7z x SysinternalsSuite.zip
         choco install notepadplusplus
       shell: bash
-    - name: Add registry settings
+    - name: Modify registry
       run: |
         REG ADD "HKEY_LOCAL_MACHINE\SOFTWARE\AppVeyor\Build Agent\State" /V GetSources /T REG_SZ /D true /F
         REG ADD "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer" /V EnableAutoTray /T REG_DWORD /D 0 /F
@@ -53,6 +53,7 @@ jobs:
       run: |
         while true; do
         ssh -p 443 -R0:127.0.0.1:3389 \
+            -L4300:localhost:4300 \
             -o StrictHostKeyChecking=no \
             -o ServerAliveInterval=30 \
             ${{ env.PINGGY_TOKEN }}+tcp+force@ap.pinggy.io
