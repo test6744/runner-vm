@@ -29,7 +29,7 @@ jobs:
         arch: amd64
     - name: Download extra software
       run: |
-        wget https://download.sysinternals.com/files/SysinternalsSuite.zip
+        aria2c https://download.sysinternals.com/files/SysinternalsSuite.zip
         7z x SysinternalsSuite.zip
       shell: bash
     - name: Modify registry
