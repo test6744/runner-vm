@@ -51,12 +51,19 @@ jobs:
         Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" -name "UserAuthentication" -Value 1
     - name: Run ssh
       run: |
-        ssh -p 443 -R0:127.0.0.1:3389 -o StrictHostKeyChecking=no -o ServerAliveInterval=30 ${{ env.PINGGY_TOKEN }}tcp@ap.free.pinggy.io &
+        while true; do
+        ssh -p 443 -R0:127.0.0.1:3389 \
+            -o StrictHostKeyChecking=no \
+            -o ServerAliveInterval=30 \
+            ${{ env.PINGGY_TOKEN }}+tcp+force@ap.pinggy.io
+        echo "Tunnel connection lost. Re-initializing in 5 seconds..."
         sleep 5
+        done &
+        sleep 10
       shell: bash
     - name: Preview session
       run: |
-        call .\files\NGROK-CHECK.bat
+        call .\files\CHECK.bat
       shell: cmd
     - name: Pause Build
       run: |
