@@ -1,6 +1,7 @@
 name: Github-Remote-Desktop
 env:
   PINGGY_TOKEN: ${{ secrets.PINGGY_TOKEN }}
+  EMAIL: ${{ secrets.EMAIL }}
 on: workflow_dispatch
 
 jobs:
