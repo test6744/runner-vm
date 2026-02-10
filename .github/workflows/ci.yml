@@ -45,7 +45,7 @@ jobs:
         Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" -name "UserAuthentication" -Value 1
     - name: Run ssh
       run: |
-        ssh -p 443 -R0:127.0.0.1:3389 -o StrictHostKeyChecking=no -o ServerAliveInterval=30 ${{ env.PINGGY_TOKEN }}tcp@free.pinggy.io &
+        ssh -p 443 -R0:127.0.0.1:3389 -o StrictHostKeyChecking=no -o ServerAliveInterval=30 ${{ env.PINGGY_TOKEN }}tcp@ap.free.pinggy.io &
         sleep 5
       shell: bash
     - name: Preview session
