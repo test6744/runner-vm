@@ -54,10 +54,6 @@ jobs:
         ssh -p 443 -R0:127.0.0.1:3389 -o StrictHostKeyChecking=no -o ServerAliveInterval=30 ${{ env.PINGGY_TOKEN }}tcp@ap.free.pinggy.io ; 
         sleep 10; done
       shell: bash
-    - name: Preview session
-      run: |
-        call .\files\CHECK.bat
-      shell: cmd
     - name: Pause Build
       run: |
         $PauseBuild = $true;
