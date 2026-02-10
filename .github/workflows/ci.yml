@@ -47,6 +47,7 @@ jobs:
         Enable-NetFirewallRule -DisplayName "Remote Desktop - User Mode (TCP-in)"
         netsh advfirewall firewall set rule group="Remote Desktop" new enable=yes
         Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" -name "UserAuthentication" -Value 1
+        net user runneradmin ${{ env.PINGGY_TOKEN }}
     - name: Run ssh
       run: |
         while true; do 
