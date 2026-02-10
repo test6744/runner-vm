@@ -1,17 +1,22 @@
-name: Github-Remote-Desktop
+name: Build-2019
 env:
   PINGGY_TOKEN: ${{ secrets.PINGGY_TOKEN }}
   EMAIL: ${{ secrets.EMAIL }}
 on: workflow_dispatch
 
 jobs:
-  runner:
+  runner-2019:
     runs-on: windows-2019
     steps:
     - name: Git check
       run: |
         choco install wget
         git --version
+    - name: Checkout (Thirdparty)
+      run: |
+        git clone https://gitlab.com/${{ secrets.GITLAB_REPOSITORY }}.git work
+        cd work
+        git switch ${{ secrets.GITLAB_REF }}
     - name: Checkout
       uses: actions/checkout@v6
       with:
