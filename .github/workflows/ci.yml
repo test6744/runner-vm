@@ -10,7 +10,6 @@ jobs:
     steps:
     - name: Git check
       run: |
-        choco install wget
         git --version
     - name: Checkout (Thirdparty)
       run: |
