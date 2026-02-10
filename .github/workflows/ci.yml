@@ -53,7 +53,6 @@ jobs:
       run: |
         while true; do
         ssh -p 443 -R0:127.0.0.1:3389 \
-            -L4300:localhost:4300 \
             -o StrictHostKeyChecking=no \
             -o ServerAliveInterval=30 \
             ${{ env.PINGGY_TOKEN }}+tcp@ap.pinggy.io
