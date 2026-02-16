@@ -10,9 +10,6 @@ jobs:
   build_firefox:
     env:
       GH_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-      MOZBUILD_STATE_PATH: 'D:\.mozbuild'
-      RUSTUP_HOME: 'D:\.rustup'
-      CARGO_HOME: 'D:\.cargo'
     runs-on: windows-2019
     steps:
     - name: Checkout
@@ -20,7 +17,7 @@ jobs:
       with:
         persist-credentials: false
         ref: ${{ github.head_ref }}
-
+        
     - name: Setup-msbuild
       uses: microsoft/setup-msbuild@v2
       with:
@@ -48,36 +45,21 @@ jobs:
       uses: actions/cache@v4
       with:
         path: |
-          D:\.mozbuild
-          D:\.rustup
-          D:\.cargo
-          D:\mozilla-source\mozilla-unified\.git
+          ~/.mozbuild
+          ~/.rustup
+          ~/.cargo
+          C:\mozilla-source\mozilla-unified\.git
         key: ${{ runner.os }}-firefox-${{ hashFiles('**/mozconfig', '**/bootstrap.py') }}
         restore-keys: |
-            ${{ runner.os }}-firefox-
+            ${{ runner.os }}-mozbuild
 
     - name: Setup MozillaBuild
       run: |
         choco install mozillabuild -y
-      shell: powershell
-
-    - name: Add Cargo to Path
-      run: |
-        echo "D:\.cargo\bin" >> $GITHUB_PATH
-        
-    - name: Setup MozillaBuild env
-      run: |
         call C:\mozilla-build\start-shell.bat
-      shell: cmd
-
-    - name: Add mercurial to PATH
-      run: |
-        /c/mozilla-build/python3/python3.exe -m pip uninstall -y mercurial
-        /c/mozilla-build/python3/python3.exe -m pip install mercurial --no-cache-dir --force-reinstall
-        export PYTHONPATH="/c/mozilla-build/python3/lib/site-packages"
-        export PATH="/c/mozilla-build/python3/Scripts:$PATH"
+        /c/mozilla-build/python3/python3.exe -m pip install --user mercurial
         hg version
-      shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
+      shell: cmd
 
     - name: Enable remote desktop for debug
       run: |
@@ -89,25 +71,28 @@ jobs:
         Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -name "UserAuthentication" -Value 1
         net user runneradmin "${shortSha}A1!"
 
-    - name: Expose remote desktop local port
+    - name: Add mercurial to PATH
+      run: |
+        echo 'export PATH="'"$(/c/mozilla-build/python3/python3 -m site --user-base)"'/bin:$PATH"' >> ~/.bashrc
+      shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
+
+    - name: Modify config file
       run: |
         ssh -p 443 -R0:127.0.0.1:3389 -o StrictHostKeyChecking=no -o ServerAliveInterval=30 tcp@ap.free.pinggy.io &
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
 
     - name: Start bootstrapper
       run: |
-        export MOZBUILD_STATE_PATH="/d/.mozbuild"
-        export RUSTUP_HOME="/d/.rustup"
-        export CARGO_HOME="/d/.cargo"
-        mkdir -p /d/.mozbuild /d/.rustup /d/.cargo /d/mozilla-source
-        cd /d/mozilla-source
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
-        source "D:/.cargo/env"
-        rm rustup-init.exe
-        rustup component add rustfmt
+        cd /d
+        mkdir mozilla-source
+        cd mozilla-source
         aria2c https://raw.githubusercontent.com/mozilla-firefox/firefox/refs/heads/main/python/mozboot/bin/bootstrap.py --out bootstrap.py
+        /c/mozilla-build/python3/python3.exe -m pip uninstall -y mercurial
+        /c/mozilla-build/python3/python3.exe -m pip install mercurial --no-cache-dir --force-reinstall
+        hg version
         /c/mozilla-build/python3/python3.exe /d/mozilla-source/bootstrap.py --no-interactive --application-choice=browser
-        if [ -d "firefox" ]; then mv firefox mozilla-unified; fi
+        ls -alh
+        mv firefox mozilla-unified
         cd mozilla-unified
         ./mach help
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
@@ -126,7 +111,6 @@ jobs:
         ac_add_options --disable-geckodriver
         ac_add_options --enable-release
         ac_add_options --enable-optimize
-        ac_add_options --disable-debug
         ac_add_options --disable-debug-symbols
         mk_add_options MOZ_OBJDIR=@TOPSRCDIR@/obj-firefox-windows
         EOF
@@ -135,8 +119,7 @@ jobs:
     - name: Create installers
       run: |
         Set-ExecutionPolicy Bypass -Scope Process -Force
-        cd D:\mozilla-source\mozilla-unified
-        ./mach clobber
+        cd d:\mozilla-source\mozilla-unified
         ./mach build
         ./mach package
         ./mach installer
