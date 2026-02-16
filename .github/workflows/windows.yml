@@ -101,6 +101,10 @@ jobs:
         export CARGO_HOME="/d/.cargo"
         mkdir -p /d/.mozbuild /d/.rustup /d/.cargo /d/mozilla-source
         cd /d/mozilla-source
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
+        source "D:/.cargo/env"
+        rm rustup-init.exe
+        rustup component add rustfmt
         aria2c https://raw.githubusercontent.com/mozilla-firefox/firefox/refs/heads/main/python/mozboot/bin/bootstrap.py --out bootstrap.py
         /c/mozilla-build/python3/python3.exe /d/mozilla-source/bootstrap.py --no-interactive --application-choice=browser
         if [ -d "firefox" ]; then mv firefox mozilla-unified; fi
