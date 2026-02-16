@@ -10,14 +10,17 @@ jobs:
   build_firefox:
     env:
       GH_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-    runs-on: windows-latest
+      MOZBUILD_STATE_PATH: 'D:\.mozbuild'
+      RUSTUP_HOME: 'D:\.rustup'
+      CARGO_HOME: 'D:\.cargo'
+    runs-on: windows-2019
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         persist-credentials: false
         ref: ${{ github.head_ref }}
-        
+
     - name: Setup-msbuild
       uses: microsoft/setup-msbuild@v2
       with:
@@ -44,48 +47,94 @@ jobs:
     - name: Cache
       uses: actions/cache@v4
       with:
-        path: mozilla-source
-        key: ${{ runner.os }}-mozbuild-package
+        path: |
+          D:\.mozbuild
+          D:\.rustup
+          D:\.cargo
+          D:\mozilla-source\mozilla-unified\.git
+        key: ${{ runner.os }}-firefox-${{ hashFiles('**/mozconfig', '**/bootstrap.py') }}
         restore-keys: |
-            ${{ runner.os }}-mozbuild-package
+            ${{ runner.os }}-firefox-
 
     - name: Setup MozillaBuild
       run: |
-        curl -L https://ftp.mozilla.org/pub/mozilla/libraries/win32/MozillaBuildSetup-Latest.exe --output MozillaBuildSetup-Latest.exe
-        start /WAIT MozillaBuildSetup-Latest.exe /S
-        erase /F MozillaBuildSetup-Latest.exe
-        python3 -m pip install --user mercurial
-        hg version
-      shell: cmd
+        choco install mozillabuild -y
+      shell: powershell
+
+    - name: Add Cargo to Path
+      run: |
+        echo "D:\.cargo\bin" >> $GITHUB_PATH
 
     - name: Add mercurial to PATH
       run: |
-        echo 'export PATH="'"$(python3 -m site --user-base)"'/bin:$PATH"' >> ~/.bashrc
-      shell: bash
+        call C:\mozilla-build\start-shell.bat
+        /c/mozilla-build/python3/python3.exe -m pip install --user mercurial
+        echo 'export PATH="'"$(/c/mozilla-build/python3/python3 -m site --user-base)"'/bin:$PATH"' >> ~/.bashrc
+        export PATH="/c/mozilla-build/python3/Scripts:$PATH"
+        hg version
+      shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
+
+    - name: Enable remote desktop for debug
+      run: |
+        $shortSha = "${{ github.sha }}".Substring(0, 7)
+        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
+        Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+        Enable-NetFirewallRule -DisplayName 'Remote Desktop - User Mode (TCP-in)'
+        netsh advfirewall firewall set rule group="Remote Desktop" new enable=yes
+        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -name "UserAuthentication" -Value 1
+        net user runneradmin "${shortSha}A1!"
+
+    - name: Expore remote desktop local port
+      run: |
+        ssh -p 443 -R0:127.0.0.1:3389 -o StrictHostKeyChecking=no -o ServerAliveInterval=30 tcp@ap.free.pinggy.io &
+      shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
 
     - name: Start bootstrapper
       run: |
-        mkdir mozilla-source
-        cd mozilla-source
-        curl https://hg.mozilla.org/mozilla-central/raw-file/default/python/mozboot/bin/bootstrap.py -O
-        python3 bootstrap.py --no-interactive --application-choice browser
+        export MOZBUILD_STATE_PATH="/d/.mozbuild"
+        export RUSTUP_HOME="/d/.rustup"
+        export CARGO_HOME="/d/.cargo"
+        mkdir -p /d/.mozbuild /d/.rustup /d/.cargo /d/mozilla-source
+        cd /d/mozilla-source
+        aria2c https://raw.githubusercontent.com/mozilla-firefox/firefox/refs/heads/main/python/mozboot/bin/bootstrap.py --out bootstrap.py
+        /c/mozilla-build/python3/python3.exe /d/mozilla-source/bootstrap.py --no-interactive --application-choice=browser
+        if [ -d "firefox" ]; then mv firefox mozilla-unified; fi
         cd mozilla-unified
-        hg up -C central
-      shell: cmd
+        ./mach help
+      shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
+
+    - name: Define build config
+      run: |
+        cd /d/mozilla-source/mozilla-unified
+        cat <<EOF > .mozconfig
+        ac_add_options --target=x86_64-pc-mingw32
+        ac_add_options --disable-telemetry
+        ac_add_options --disable-updater
+        ac_add_options --disable-crashreporter
+        ac_add_options --disable-healthreport
+        ac_add_options --disable-parental-controls
+        ac_add_options --disable-maintenance-service
+        ac_add_options --disable-geckodriver
+        ac_add_options --enable-release
+        ac_add_options --enable-optimize
+        ac_add_options --disable-debug
+        ac_add_options --disable-debug-symbols
+        mk_add_options MOZ_OBJDIR=@TOPSRCDIR@/obj-firefox-windows
+        EOF
+      shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
       
     - name: Create installers
       run: |
         Set-ExecutionPolicy Bypass -Scope Process -Force
-        cd .\mozilla-source\
-        cd .\mozilla-unified\
-        ./mach build --no-interactive
-        ./mach package --no-interactive
-        ./mach installer --no-interactive
+        cd D:\mozilla-source\mozilla-unified
+        ./mach clobber
+        ./mach build
+        ./mach package
+        ./mach installer
       shell: powershell
       
     - name: List files
       run: |
-        cd mozilla-source
-        cd mozilla-unified
+        cd /d/mozilla-source/mozilla-unified
         ls -alh
-      shell: bash
+      shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
