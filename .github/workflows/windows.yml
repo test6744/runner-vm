@@ -64,7 +64,11 @@ jobs:
     - name: Add Cargo to Path
       run: |
         echo "D:\.cargo\bin" >> $GITHUB_PATH
+        
+    - name: Setup MozillaBuild env
+      run: |
         call C:\mozilla-build\start-shell.bat
+      shell: cmd
 
     - name: Add mercurial to PATH
       run: |
