@@ -64,10 +64,10 @@ jobs:
     - name: Add Cargo to Path
       run: |
         echo "D:\.cargo\bin" >> $GITHUB_PATH
+        call C:\mozilla-build\start-shell.bat
 
     - name: Add mercurial to PATH
       run: |
-        call C:\mozilla-build\start-shell.bat
         /c/mozilla-build/python3/python3.exe -m pip install --user mercurial
         echo 'export PATH="'"$(/c/mozilla-build/python3/python3 -m site --user-base)"'/bin:$PATH"' >> ~/.bashrc
         export PATH="/c/mozilla-build/python3/Scripts:$PATH"
