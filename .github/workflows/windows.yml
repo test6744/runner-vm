@@ -73,7 +73,7 @@ jobs:
     - name: Add mercurial to PATH
       run: |
         /c/mozilla-build/python3/python3.exe -m pip install mercurial
-        echo 'export PATH="'"$(/c/mozilla-build/python3/python3.exe -m site --user-base)"'/bin:$PATH"' >> ~/.bashrc
+        export PYTHONPATH="/c/mozilla-build/python3/lib/site-packages"
         export PATH="/c/mozilla-build/python3/Scripts:$PATH"
         hg version
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
