@@ -13,7 +13,6 @@ jobs:
       MOZBUILD_STATE_PATH: 'D:\.mozbuild'
       RUSTUP_HOME: 'D:\.rustup'
       CARGO_HOME: 'D:\.cargo'
-      PYTHONPATH: 'C:\mozilla-build\python3'
     runs-on: windows-2019
     steps:
     - name: Checkout
@@ -73,7 +72,7 @@ jobs:
 
     - name: Add mercurial to PATH
       run: |
-        /c/mozilla-build/python3/python3.exe -m pip install --user mercurial
+        /c/mozilla-build/python3/python3.exe -m pip install mercurial
         echo 'export PATH="'"$(/c/mozilla-build/python3/python3.exe -m site --user-base)"'/bin:$PATH"' >> ~/.bashrc
         export PATH="/c/mozilla-build/python3/Scripts:$PATH"
         hg version
