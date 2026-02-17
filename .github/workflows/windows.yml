@@ -18,7 +18,7 @@ jobs:
         repository: mozilla-firefox/firefox
         persist-credentials: false
         ref: ${{ github.head_ref }}
-        path: mozilla-unified
+        path: firefox
         
     - name: Setup-msbuild
       uses: microsoft/setup-msbuild@v2
@@ -59,7 +59,7 @@ jobs:
       run: |
         cd ../../../..
         mkdir mozilla-source
-        mklink /J "D:\mozilla-source\mozilla-unified" "%GITHUB_WORKSPACE%\mozilla-unified"
+        mklink /J "D:\mozilla-source\mozilla-unified" "%GITHUB_WORKSPACE%\firefox"
       shell: cmd
 
     - name: Setup MozillaBuild
@@ -70,21 +70,13 @@ jobs:
 
     - name: Enable remote desktop for debug
       run: |
-        $shortSha = "${{ github.sha }}".Substring(0, 7)
         Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
         Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
         Enable-NetFirewallRule -DisplayName 'Remote Desktop - User Mode (TCP-in)'
         netsh advfirewall firewall set rule group="Remote Desktop" new enable=yes
         Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -name "UserAuthentication" -Value 1
-        net user runneradmin "${shortSha}A1!"
 
-    - name: Add mercurial to PATH
-      run: |
-        /c/mozilla-build/python3/python3.exe -m pip uninstall mercurial -y
-        /c/mozilla-build/python3/python3.exe -m pip install mercurial --no-cache-dir --force-reinstall
-      shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
-
-    - name: Modify config file
+    - name: Display remote desktop connection
       run: |
         FULL_SHA="${{ github.sha }}"
         SHORT_SHA="${FULL_SHA:0:7}"
@@ -97,6 +89,12 @@ jobs:
         sleep 5
         echo runneradmin "$P2X" >> pinggy_info.txt
         cat pinggy_info.txt
+      shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
+
+    - name: Add mercurial to PATH
+      run: |
+        /c/mozilla-build/python3/python3.exe -m pip uninstall mercurial -y
+        /c/mozilla-build/python3/python3.exe -m pip install mercurial --no-cache-dir --force-reinstall
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
 
     - name: Start bootstrapper
