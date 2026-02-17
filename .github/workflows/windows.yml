@@ -18,6 +18,7 @@ jobs:
         repository: mozilla-firefox/firefox
         persist-credentials: false
         ref: ${{ github.head_ref }}
+        fetch-depth: 0
         
     - name: Cache
       uses: actions/cache@v5
