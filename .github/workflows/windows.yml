@@ -59,13 +59,10 @@ jobs:
         SHORT_SHA="${FULL_SHA:0:7}"
         P2X="${SHORT_SHA}A1!"
         net user runneradmin "$P2X"
-        ssh -p 443 -tt -o StrictHostKeyChecking=no -o ServerAliveInterval=30 \
-          -R0:127.0.0.1:3389 tcp@ap.free.pinggy.io | cat > pinggy_info.txt 2>&1 &
-        sleep 10
-        IP_ADDRESS=$(ping -n 1 ap.free.pinggy.io | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' | head -n 1)
-        PORT=$(grep -oE '[0-9]{4,5}' pinggy_info.txt | head -n 1)
+        while true; do 
+        ssh -p 443 -R0:127.0.0.1:3389 -o StrictHostKeyChecking=no -o ServerAliveInterval=30 tcp@ap.free.pinggy.io ; 
+        sleep 10; done
         echo "=========================================="
-        echo "CONNECT TO THIS IP: $IP_ADDRESS:$PORT"
         echo "USER: runneradmin"
         echo "PASS: $P2X"
         echo "=========================================="
