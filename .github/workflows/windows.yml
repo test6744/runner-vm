@@ -25,6 +25,7 @@ jobs:
         git init
         git remote add origin https://github.com/mozilla-firefox/firefox.git
         git pull
+        rustup update stable
         
     - name: Cache
       uses: actions/cache@v5
