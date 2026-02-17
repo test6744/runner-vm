@@ -18,6 +18,7 @@ jobs:
         repository: mozilla-firefox/firefox
         persist-credentials: false
         ref: ${{ github.head_ref }}
+        path: C:\mozilla-source\mozilla-unified
         
     - name: Setup-msbuild
       uses: microsoft/setup-msbuild@v2
