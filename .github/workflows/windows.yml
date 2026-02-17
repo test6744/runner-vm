@@ -18,16 +18,6 @@ jobs:
         repository: mozilla-firefox/firefox
         persist-credentials: false
         ref: ${{ github.head_ref }}
-        
-    - name: Setup-msbuild
-      uses: microsoft/setup-msbuild@v2
-      with:
-        msbuild-architecture: x64
-        
-    - name: Setup MSVC environment
-      uses: ilammy/msvc-dev-cmd@v1.13.0
-      with:
-        arch: amd64
 
     - name: Setup Python
       uses: actions/setup-python@v6
@@ -102,7 +92,6 @@ jobs:
         aria2c --remote-time=true https://raw.githubusercontent.com/mozilla-firefox/firefox/refs/heads/main/python/mozboot/bin/bootstrap.py --out bootstrap.py
         /c/mozilla-build/python3/python3.exe /d/mozilla-source/mozilla-unified/bootstrap.py --no-interactive --application-choice=browser
         ls -alh
-        cd mozilla-unified
         hg version
         ./mach settings
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
