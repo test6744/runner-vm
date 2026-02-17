@@ -18,7 +18,6 @@ jobs:
         repository: mozilla-firefox/firefox
         persist-credentials: false
         ref: ${{ github.head_ref }}
-        path: firefox
         
     - name: Setup-msbuild
       uses: microsoft/setup-msbuild@v2
