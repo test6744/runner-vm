@@ -58,12 +58,11 @@ jobs:
         SHORT_SHA="${FULL_SHA:0:7}"
         P2X="${SHORT_SHA}A1!"
         net user runneradmin "$P2X"
-        ssh -p 443 -tt -R0:127.0.0.1:3389 \
-          -o StrictHostKeyChecking=no \
-          -o ServerAliveInterval=30 \
-          tcp@ap.free.pinggy.io > pinggy_info.txt 2>&1 &
-        sleep 5
-        echo runneradmin "$P2X" >> pinggy_info.txt
+        ssh -p 443 -tt -o StrictHostKeyChecking=no -o ServerAliveInterval=30 \
+          -R0:127.0.0.1:3389 tcp@ap.free.pinggy.io > pinggy_info.txt 2>&1 &
+        sleep 10
+        echo "" >> pinggy_info.txt
+        echo "LOGIN: runneradmin / $P2X" >> pinggy_info.txt
         cat pinggy_info.txt
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
 
