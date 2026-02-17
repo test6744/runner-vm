@@ -102,7 +102,6 @@ jobs:
         cd /d/mozilla-source/mozilla-unified
         cat <<EOF > .mozconfig
         ac_add_options --target=x86_64-pc-mingw32
-        ac_add_options --disable-telemetry
         ac_add_options --disable-updater
         ac_add_options --disable-crashreporter
         ac_add_options --disable-healthreport
