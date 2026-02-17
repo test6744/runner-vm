@@ -80,9 +80,6 @@ jobs:
 
     - name: Add mercurial to PATH
       run: |
-        export WINDOWSSDKDIR=
-        export WINDOWSLIBDIR=
-        echo 'export PATH="'"$(/c/mozilla-build/python3/python3.exe -m site --user-base)"'/bin:$PATH"' >> ~/.bashrc
         /c/mozilla-build/python3/python3.exe -m pip uninstall mercurial -y
         /c/mozilla-build/python3/python3.exe -m pip install mercurial --no-cache-dir --force-reinstall
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
@@ -110,7 +107,7 @@ jobs:
         ls -alh
         cd mozilla-unified
         hg version
-        ./mach help
+        ./mach settings
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
 
     - name: Define build config
@@ -127,6 +124,10 @@ jobs:
       
     - name: Build
       run: |
+        export WINDOWSSDKDIR=
+        export WINDOWSLIBDIR=
+        PYTHON_SCRIPTS_PATH=$(/c/mozilla-build/python3/python3.exe -c "import sysconfig; print(sysconfig.get_path('scripts'))")
+        export PATH="$PYTHON_SCRIPTS_PATH:$PATH"
         cd /d/mozilla-source/mozilla-unified
         ./mach clobber
         ./mach build
