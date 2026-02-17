@@ -65,8 +65,11 @@ jobs:
         SHORT_SHA="${FULL_SHA:0:7}"
         P2X="${SHORT_SHA}A1!"
         net user runneradmin "$P2X"
-        ssh -p 443 -R0:127.0.0.1:3389 -o StrictHostKeyChecking=no -o ServerAliveInterval=30 tcp@ap.free.pinggy.io &
+        ssh -p 443 -L4300:localhost:4300 -R0:127.0.0.1:3389 -o StrictHostKeyChecking=no -o ServerAliveInterval=30 tcp@ap.free.pinggy.io &
+        sleep 10
         echo "=========================================="
+        echo "REMOTE URL:"
+        curl -s http://localhost:4300/urls | jq -r '.urls[0]'
         echo "USER: runneradmin"
         echo "PASS: $P2X"
         echo "=========================================="
