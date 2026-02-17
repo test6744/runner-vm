@@ -24,7 +24,6 @@ jobs:
       run: |
         git init && git symbolic-ref HEAD refs/heads/release
         git remote add origin https://github.com/mozilla-firefox/firefox.git
-        git switch release
         git pull
         
     - name: Cache
