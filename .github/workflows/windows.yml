@@ -22,8 +22,6 @@ jobs:
 
     - name: Checkout Phase II
       run: |
-        git init
-        git remote add origin https://github.com/mozilla-firefox/firefox.git
         git pull
         rustup update stable
         
@@ -34,7 +32,7 @@ jobs:
           ~/.mozbuild
           ~/.rustup
           ~/.cargo
-          C:\mozilla-source\mozilla-unified\.git
+          D:\mozilla-source\mozilla-unified\.git
         key: ${{ runner.os }}-firefox-${{ hashFiles('**/mozconfig', '**/bootstrap.py') }}
         restore-keys: |
             ${{ runner.os }}-mozbuild
