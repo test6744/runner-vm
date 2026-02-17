@@ -64,7 +64,7 @@ jobs:
         echo "" >> pinggy_info.txt
         echo "LOGIN: runneradmin / $P2X" >> pinggy_info.txt
         cat pinggy_info.txt
-      shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
+      shell: bash
 
     - name: Add mercurial to PATH
       run: |
