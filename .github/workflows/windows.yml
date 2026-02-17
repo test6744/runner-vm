@@ -57,9 +57,9 @@ jobs:
 
     - name: Link checkout
       run: |
-        cd D:
+        cd ../../../..
         mkdir mozilla-source
-        mklink /J "D:\mozilla-source\mozilla-unified" "D:\a\runner-vm\runner-vm\mozilla-unified"
+        mklink /J "D:\mozilla-source\mozilla-unified" "D:/a/runner-vm/runner-vm/mozilla-unified"
       shell: cmd
 
     - name: Setup MozillaBuild
