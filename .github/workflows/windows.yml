@@ -69,7 +69,7 @@ jobs:
         echo "USER: runneradmin"
         echo "PASS: $P2X"
         echo "=========================================="
-      shell: bash
+      shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
 
     - name: Add mercurial to PATH
       run: |
