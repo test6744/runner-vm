@@ -24,12 +24,12 @@ jobs:
         msbuild-architecture: x64
         
     - name: Setup MSVC environment
-      uses: ilammy/msvc-dev-cmd@v1
+      uses: ilammy/msvc-dev-cmd@v1.13.0
       with:
         arch: amd64
 
     - name: Setup Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: '3.11'
         token: ${{ env.GH_TOKEN }}
@@ -42,7 +42,7 @@ jobs:
         token: ${{ env.GH_TOKEN }}
         
     - name: Cache
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: |
           ~/.mozbuild
@@ -109,13 +109,12 @@ jobs:
         EOF
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
       
-    - name: Create installers
+    - name: Build
       run: |
         Set-ExecutionPolicy Bypass -Scope Process -Force
         cd d:\mozilla-source\mozilla-unified
+        ./mach clobber
         ./mach build
-        ./mach package
-        ./mach installer
       shell: powershell
       
     - name: List files
