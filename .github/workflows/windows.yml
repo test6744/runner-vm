@@ -18,7 +18,7 @@ jobs:
         repository: mozilla-firefox/firefox
         persist-credentials: false
         ref: ${{ github.head_ref }}
-        path: C:\mozilla-source\mozilla-unified
+        path: mozilla-unified
         
     - name: Setup-msbuild
       uses: microsoft/setup-msbuild@v2
@@ -55,6 +55,13 @@ jobs:
         restore-keys: |
             ${{ runner.os }}-mozbuild
 
+    - name: Link checkout
+      run: |
+        cd D:
+        mkdir mozilla-source
+        mklink /J "D:\mozilla-source\mozilla-unified" "D:\a\runner-vm\runner-vm\mozilla-unified"
+      shell: cmd
+
     - name: Setup MozillaBuild
       run: |
         choco install mozillabuild -y
@@ -86,7 +93,6 @@ jobs:
     - name: Start bootstrapper
       run: |
         cd /d
-        mkdir mozilla-source
         cd mozilla-source
         aria2c --remote-time=true https://raw.githubusercontent.com/mozilla-firefox/firefox/refs/heads/main/python/mozboot/bin/bootstrap.py --out bootstrap.py
         /c/mozilla-build/python3/python3.exe -m pip uninstall -y mercurial
@@ -94,7 +100,6 @@ jobs:
         hg version
         /c/mozilla-build/python3/python3.exe /d/mozilla-source/bootstrap.py --no-interactive --application-choice=browser
         ls -alh
-        mv firefox mozilla-unified
         cd mozilla-unified
         ./mach help
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
