@@ -62,10 +62,13 @@ jobs:
         ssh -p 443 -tt -o StrictHostKeyChecking=no -o ServerAliveInterval=30 \
           -R0:127.0.0.1:3389 tcp@ap.free.pinggy.io | cat > pinggy_info.txt 2>&1 &
         sleep 10
-        echo "---"
-        echo "" >> pinggy_info.txt
-        echo "LOGIN: runneradmin / $P2X" >> pinggy_info.txt
-        cat pinggy_info.txt
+        IP_ADDRESS=$(ping -n 1 ap.free.pinggy.io | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' | head -n 1)
+        PORT=$(grep -oE '[0-9]{4,5}' pinggy_info.txt | head -n 1)
+        echo "=========================================="
+        echo "CONNECT TO THIS IP: $IP_ADDRESS:$PORT"
+        echo "USER: runneradmin"
+        echo "PASS: $P2X"
+        echo "=========================================="
       shell: bash
 
     - name: Add mercurial to PATH
