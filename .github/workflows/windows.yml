@@ -35,7 +35,7 @@ jobs:
       run: |
         cd ../../../..
         mkdir mozilla-source
-        mklink /J "D:\mozilla-source\mozilla-unified" "%GITHUB_WORKSPACE%\firefox"
+        mklink /J "D:\mozilla-source\mozilla-unified" "%GITHUB_WORKSPACE%"
       shell: cmd
 
     - name: Setup MozillaBuild
