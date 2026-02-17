@@ -15,7 +15,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v6
       with:
-        repository: mozilla-firefox/firefox.git
+        repository: mozilla-firefox/firefox
         persist-credentials: false
         ref: ${{ github.head_ref }}
         
