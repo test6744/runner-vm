@@ -111,11 +111,10 @@ jobs:
       
     - name: Build
       run: |
-        Set-ExecutionPolicy Bypass -Scope Process -Force
-        cd d:\mozilla-source\mozilla-unified
-        ./mach clobber
-        ./mach build
-      shell: powershell
+        cd /d/mozilla-source/mozilla-unified
+        .\mach clobber
+        .\mach build
+      shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
       
     - name: List files
       run: |
