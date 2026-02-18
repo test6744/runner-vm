@@ -18,7 +18,7 @@ jobs:
     - name: Checkout Phase I
       uses: actions/checkout@v4
       with:
-        repository: mozilla-firefox/firefox
+        repository: test6744/mozilla-unified
         persist-credentials: false
         ref: ${{ github.head_ref }}
         fetch-depth: 1
@@ -112,8 +112,8 @@ jobs:
       run: |
         cat <<EOF > /d/mozilla-source/mozilla-unified/.mozconfig
         ac_add_options --target=x86_64-pc-mingw32
-        ac_add_options --with-ccache=sccache
         ac_add_options --enable-artifact-builds
+        ac_add_options --with-ccache=sccache
         ac_add_options --disable-tests
         mk_add_options MOZ_OBJDIR=@TOPSRCDIR@/obj-firefox-windows
         EOF
