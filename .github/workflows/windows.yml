@@ -132,6 +132,7 @@ jobs:
       
     - name: Build
       run: |
+        rustup update stable
         export MOZBUILD_STATE_PATH="/d/mozbuild"
         cd /d/mozilla-source/mozilla-unified
         ./mach clobber
