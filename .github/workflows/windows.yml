@@ -113,8 +113,6 @@ jobs:
         cat <<EOF > /d/mozilla-source/mozilla-unified/.mozconfig
         ac_add_options --target=x86_64-pc-mingw32
         ac_add_options --enable-artifact-builds
-        ac_add_options --with-ccache=sccache
-        ac_add_options --disable-tests
         mk_add_options MOZ_OBJDIR=@TOPSRCDIR@/obj-firefox-windows
         EOF
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
