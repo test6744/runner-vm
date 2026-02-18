@@ -1,4 +1,9 @@
 name: Build firefox on Windows
+env:
+  GH_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+  SCCACHE_DIR: 'C:\Users\runneradmin\AppData\Local\Mozilla\sccache'
+  SCCACHE_CACHE_SIZE: "2G"
+  SCCACHE_IDLE_TIMEOUT: "0" 
 on:
   workflow_dispatch:
 
@@ -8,8 +13,6 @@ concurrency:
 
 jobs:
   build_firefox:
-    env:
-      GH_TOKEN: ${{ secrets.ACCESS_TOKEN }}
     runs-on: windows-2019
     steps:
     - name: Checkout Phase I
@@ -18,14 +21,10 @@ jobs:
         repository: mozilla-firefox/firefox
         persist-credentials: false
         ref: ${{ github.head_ref }}
-        fetch-depth: 0
-
-    - name: Checkout Phase II
-      run: |
-        git init
-        git remote add origin https://github.com/mozilla-firefox/firefox.git
-        git pull
-        rustup update stable
+        fetch-depth: 1
+        sparse-checkout: |
+          /python/mozboot/bin/bootstrap.py
+          /browser/config
         
     - name: Cache
       uses: actions/cache@v5
@@ -34,10 +33,22 @@ jobs:
           ~/.mozbuild
           ~/.rustup
           ~/.cargo
+          ~\AppData\Local\Mozilla\sccache
           D:\mozilla-source\mozilla-unified\.git
-        key: ${{ runner.os }}-firefox-${{ hashFiles('**/mozconfig', '**/bootstrap.py') }}
+        key: |
+          ${{ runner.os }}-firefox-${{ hashFiles('**/mozconfig', '**/bootstrap.py') }}
+          ${{ runner.os }}-sccache-${{ github.sha }}
         restore-keys: |
             ${{ runner.os }}-mozbuild
+            ${{ runner.os }}-sccache-
+
+    - name: Checkout Phase II
+      run: |
+        git reset --hard HEAD
+        git gc --prune=now --aggressive
+        git pull
+        rustup update stable
+        cargo check
 
     - name: Link checkout
       run: |
@@ -83,53 +94,47 @@ jobs:
         /c/mozilla-build/python3/python3.exe -m pip install mercurial --no-cache-dir --force-reinstall
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
 
-    - name: Pause Build
-      run: |
-        $PauseBuild = $true;
-        if($PauseBuild){
-        $path = "$($env:USERPROFILE)\Desktop\Delete me to continue build.txt"
-        # create "lock" file.
-        Set-Content -Path $path -Value ''    
-        Write-Warning "Build paused. To resume it, open a RDP session, delete 'Delete me to continue build.txt' file on Desktop."
-        # wait until "lock" file is deleted by user.
-        while(Test-Path $path) {
-          Start-Sleep -Seconds 1
-        }
-        Write-Host "Build lock file has been deleted. Resuming build."}
-      shell: powershell
+#    - name: Pause Build
+#      run: |
+#        $PauseBuild = $true;
+#        if($PauseBuild){
+#        $path = "$($env:USERPROFILE)\Desktop\Delete me to continue build.txt"
+#        # create "lock" file.
+#        Set-Content -Path $path -Value ''    
+#        Write-Warning "Build paused. To resume it, open a RDP session, delete 'Delete me to continue build.txt' file on Desktop."
+#        # wait until "lock" file is deleted by user.
+#        while(Test-Path $path) {
+#          Start-Sleep -Seconds 1
+#        }
+#        Write-Host "Build lock file has been deleted. Resuming build."}
+#      shell: powershell
 
-    - name: Start bootstrapper
+    - name: Test mach command
       run: |
-        cd /d/mozilla-source/mozilla-unified
-        ls -alh
-        hg version
-        ./mach settings
-      shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
+        C:\mozilla-build\start-shell.bat "cd /d/mozilla-source/mozilla-unified && ls -alh && hg version && ./mach settings"
+      shell: cmd
 
     - name: Define build config
       run: |
-        cd /d/mozilla-source/mozilla-unified
-        cat <<EOF > .mozconfig
+        cat <<EOF > /d/mozilla-source/mozilla-unified/.mozconfig
         ac_add_options --target=x86_64-pc-mingw32
+        ac_add_options --with-ccache=sccache
+        ac_add_options --enable-artifact-builds
         ac_add_options --enable-release
         ac_add_options --enable-optimize
         ac_add_options --disable-debug-symbols
+        ac_add_options --disable-tests
+        ac_add_options --disable-debug
         mk_add_options MOZ_OBJDIR=@TOPSRCDIR@/obj-firefox-windows
         EOF
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
       
     - name: Build
       run: |
-        PYTHON_SCRIPTS_PATH=$(/c/mozilla-build/python3/python3.exe -c "import sysconfig; print(sysconfig.get_path('scripts'))")
-        export PATH="$PYTHON_SCRIPTS_PATH:$PATH"
-        cd /d/mozilla-source/mozilla-unified
-        ./mach clobber
-        ./mach build
-        ./mach package
-      shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
+        C:\mozilla-build\start-shell.bat "cd /d/mozilla-source/mozilla-unified && ./mach clobber && ./mach build && ./mach package"
+      shell: cmd
       
     - name: List files
       run: |
-        cd /d/mozilla-source/mozilla-unified
-        ls -alh
-      shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
+        C:\mozilla-build\start-shell.bat "cd /d/mozilla-source/mozilla-unified && ls -alh"
+      shell: cmd
