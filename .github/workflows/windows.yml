@@ -1,7 +1,7 @@
 name: Build firefox on Windows
 env:
   GH_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-  SCCACHE_DIR: '$($env:USERPROFILE)\AppData\Local\Mozilla\sccache'
+  SCCACHE_DIR: 'C:\Users\runneradmin\AppData\Local\Mozilla\sccache'
   SCCACHE_CACHE_SIZE: "2G"
   SCCACHE_IDLE_TIMEOUT: "0" 
 on:
