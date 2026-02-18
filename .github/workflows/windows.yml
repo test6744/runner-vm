@@ -25,6 +25,7 @@ jobs:
         sparse-checkout: |
           /python/mozboot/bin/bootstrap.py
           /browser/config
+        sparse-checkout-cone-mode: false
         
     - name: Cache
       uses: actions/cache@v5
