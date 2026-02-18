@@ -82,8 +82,8 @@ jobs:
       
     - name: Add mercurial to PATH
       run: |
-        C:\mozilla-build\start-shell.bat "python3 -m pip uninstall mercurial -y && python3 -m pip install mercurial --no-cache-dir --force-reinstall"
-      shell: cmd
+        python3 -m pip uninstall mercurial -y && python3 -m pip install mercurial --no-cache-dir --force-reinstall
+      shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
 
 #    - name: Pause Build
 #      run: |
@@ -102,8 +102,8 @@ jobs:
 
     - name: Test mach command
       run: |
-        C:\mozilla-build\start-shell.bat "cd /d/mozilla-source/mozilla-unified && ls -alh && hg version && ./mach settings"
-      shell: cmd
+        cd /d/mozilla-source/mozilla-unified && ls -alh && hg version && ./mach settings
+      shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
 
     - name: Define build config
       run: |
@@ -122,10 +122,10 @@ jobs:
       
     - name: Build
       run: |
-        C:\mozilla-build\start-shell.bat "cd /d/mozilla-source/mozilla-unified && ./mach clobber && ./mach build && ./mach package"
-      shell: cmd
+        cd /d/mozilla-source/mozilla-unified && ./mach clobber && ./mach build && ./mach package
+      shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
       
     - name: List files
       run: |
-        C:\mozilla-build\start-shell.bat "cd /d/mozilla-source/mozilla-unified && ls -alh"
-      shell: cmd
+        cd /d/mozilla-source/mozilla-unified && ls -alh
+      shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
