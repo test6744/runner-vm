@@ -22,10 +22,6 @@ jobs:
         persist-credentials: false
         ref: ${{ github.head_ref }}
         fetch-depth: 1
-        sparse-checkout: |
-          /python/mozboot/bin/bootstrap.py
-          /browser/config
-        sparse-checkout-cone-mode: false
         
     - name: Cache
       uses: actions/cache@v5
@@ -35,21 +31,17 @@ jobs:
           ~/.rustup
           ~/.cargo
           ~\AppData\Local\Mozilla\sccache
-          D:\mozilla-source\mozilla-unified\.git
         key: |
-          ${{ runner.os }}-firefox-${{ hashFiles('**/mozconfig', '**/bootstrap.py') }}
+          ${{ runner.os }}-mozilla-unified-${{ hashFiles('**/mozconfig', '**/bootstrap.py') }}
           ${{ runner.os }}-sccache-${{ github.sha }}
         restore-keys: |
-            ${{ runner.os }}-mozbuild
-            ${{ runner.os }}-sccache-
+          ${{ runner.os }}-mozilla-unified-
+          ${{ runner.os }}-sccache-
 
     - name: Checkout Phase II
       run: |
         git reset --hard HEAD
-        git gc --prune=now --aggressive
         git pull
-        rustup update stable
-        cargo check
 
     - name: Link checkout
       run: |
@@ -62,7 +54,6 @@ jobs:
     - name: Setup MozillaBuild
       run: |
         choco install mozillabuild -y --no-progress --limit-output
-        cmd /c C:\mozilla-build\start-shell.bat
       shell: cmd
 
     - name: Enable remote desktop for debug
@@ -91,9 +82,8 @@ jobs:
       
     - name: Add mercurial to PATH
       run: |
-        /c/mozilla-build/python3/python3.exe -m pip uninstall mercurial -y
-        /c/mozilla-build/python3/python3.exe -m pip install mercurial --no-cache-dir --force-reinstall
-      shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
+        C:\mozilla-build\start-shell.bat "python3 -m pip uninstall mercurial -y && python3 -m pip install mercurial --no-cache-dir --force-reinstall"
+      shell: cmd
 
 #    - name: Pause Build
 #      run: |
