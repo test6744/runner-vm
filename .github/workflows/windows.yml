@@ -40,7 +40,6 @@ jobs:
 
     - name: Checkout Phase II
       run: |
-        git reset --hard HEAD
         git pull
 
     - name: Link checkout
@@ -82,7 +81,8 @@ jobs:
       
     - name: Add mercurial to PATH
       run: |
-        /c/mozilla-build/python3/python3 -m pip uninstall mercurial -y && python3 -m pip install mercurial --no-cache-dir --force-reinstall
+        /c/mozilla-build/python3/python3 -m pip uninstall mercurial -y
+        /c/mozilla-build/python3/python3 -m pip install mercurial --no-cache-dir --force-reinstall
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
 
 #    - name: Pause Build
@@ -102,8 +102,11 @@ jobs:
 
     - name: Test mach command
       run: |
-        cd /d/mozilla-source/mozilla-unified && ls -alh && hg version && ./mach settings
-      shell: 'C:\mozilla-build\start-shell.bat {0}'
+        cd /d/mozilla-source/mozilla-unified
+        ls -alh
+        hg version
+        ./mach settings
+      shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
 
     - name: Define build config
       run: |
@@ -122,10 +125,29 @@ jobs:
       
     - name: Build
       run: |
-        cd /d/mozilla-source/mozilla-unified && ./mach clobber && ./mach build && ./mach package
+        cd /d/mozilla-source/mozilla-unified
+        ./mach clobber
+        ./mach build
+        ./mach package
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
+
+    - name: Pause Build
+      run: |
+        $PauseBuild = $true;
+        if($PauseBuild){
+        $path = "$($env:USERPROFILE)\Desktop\Delete me to continue build.txt"
+        # create "lock" file.
+        Set-Content -Path $path -Value ''    
+        Write-Warning "Build paused. To resume it, open a RDP session, delete 'Delete me to continue build.txt' file on Desktop."
+        # wait until "lock" file is deleted by user.
+        while(Test-Path $path) {
+          Start-Sleep -Seconds 1
+        }
+        Write-Host "Build lock file has been deleted. Resuming build."}
+      shell: powershell
       
     - name: List files
       run: |
-        cd /d/mozilla-source/mozilla-unified && ls -alh
+        cd /d/mozilla-source/mozilla-unified
+        ls -alh
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
