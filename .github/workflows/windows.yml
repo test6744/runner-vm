@@ -1,7 +1,7 @@
 name: Build firefox on Windows
 env:
   GH_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-  SCCACHE_DIR: 'C:\Users\runneradmin\AppData\Local\Mozilla\sccache'
+  SCCACHE_DIR: '$($env:USERPROFILE)\AppData\Local\Mozilla\sccache'
   SCCACHE_CACHE_SIZE: "2G"
   SCCACHE_IDLE_TIMEOUT: "0" 
 on:
@@ -15,13 +15,20 @@ jobs:
   build_firefox:
     runs-on: windows-2019
     steps:
-    - name: Checkout Phase I
+    - name: Checkout
       uses: actions/checkout@v4
       with:
-        repository: mozilla-firefox/firefox
+        repository: mozilla/enterprise-firefox
         persist-credentials: false
         ref: ${{ github.head_ref }}
         fetch-depth: 1
+
+    - name: Configure sccache
+      uses: actions/github-script@v7
+      with:
+        script: |
+          core.exportVariable('ACTIONS_RESULTS_URL', process.env.ACTIONS_RESULTS_URL || '');
+          core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
         
     - name: Cache
       uses: actions/cache@v5
@@ -31,6 +38,7 @@ jobs:
           ~/.rustup
           ~/.cargo
           ~\AppData\Local\Mozilla\sccache
+          D:\mozbuild
         key: |
           ${{ runner.os }}-mozilla-unified-${{ hashFiles('**/mozconfig', '**/bootstrap.py') }}
           ${{ runner.os }}-sccache-${{ github.sha }}
@@ -38,10 +46,10 @@ jobs:
           ${{ runner.os }}-mozilla-unified-
           ${{ runner.os }}-sccache-
 
-    - name: Checkout Phase II
-      run: |
-        git reset --hard HEAD
-        git pull
+#    - name: Checkout Phase II
+#      run: |
+#        git reset --hard HEAD
+#        git pull
 
     - name: Link checkout
       run: |
@@ -54,6 +62,7 @@ jobs:
     - name: Setup MozillaBuild
       run: |
         choco install mozillabuild -y --no-progress --limit-output
+        cmd /c C:\mozilla-build\start-shell.bat
       shell: cmd
 
     - name: Enable remote desktop for debug
@@ -64,7 +73,7 @@ jobs:
         netsh advfirewall firewall set rule group="Remote Desktop" new enable=yes
         Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -name "UserAuthentication" -Value 1
 
-    - name: Display remote desktop connection
+    - name: Display remote desktop connection for debug
       run: |
         FULL_SHA="${{ github.sha }}"
         SHORT_SHA="${FULL_SHA:0:7}"
@@ -73,8 +82,6 @@ jobs:
         ssh -p 443 -L4300:localhost:4300 -R0:127.0.0.1:3389 -o StrictHostKeyChecking=no -o ServerAliveInterval=30 tcp@ap.free.pinggy.io &
         sleep 10
         echo "=========================================="
-        echo "REMOTE URL:"
-        curl -s http://localhost:4300/urls | jq -r '.urls[0]'
         echo "USER: runneradmin"
         echo "PASS: $P2X"
         echo "=========================================="
@@ -82,8 +89,9 @@ jobs:
       
     - name: Add mercurial to PATH
       run: |
-        C:\mozilla-build\start-shell.bat "python3 -m pip uninstall mercurial -y && python3 -m pip install mercurial --no-cache-dir --force-reinstall"
-      shell: cmd
+        /c/mozilla-build/python3/python3.exe -m pip uninstall mercurial -y
+        /c/mozilla-build/python3/python3.exe -m pip install mercurial --no-cache-dir --force-reinstall
+      shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
 
 #    - name: Pause Build
 #      run: |
@@ -102,15 +110,17 @@ jobs:
 
     - name: Test mach command
       run: |
-        C:\mozilla-build\start-shell.bat "cd /d/mozilla-source/mozilla-unified && ls -alh && hg version && ./mach settings"
-      shell: cmd
+        cd /d/mozilla-source/mozilla-unified
+        ls -alh
+        hg version
+        ./mach settings
+      shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
 
     - name: Define build config
       run: |
         cat <<EOF > /d/mozilla-source/mozilla-unified/.mozconfig
-        ac_add_options --target=x86_64-pc-mingw32
+        ac_add_options --target=x86_64-pc-windows-msvc
         ac_add_options --with-ccache=sccache
-        ac_add_options --enable-artifact-builds
         ac_add_options --enable-release
         ac_add_options --enable-optimize
         ac_add_options --disable-debug-symbols
@@ -122,10 +132,30 @@ jobs:
       
     - name: Build
       run: |
-        C:\mozilla-build\start-shell.bat "cd /d/mozilla-source/mozilla-unified && ./mach clobber && ./mach build && ./mach package"
-      shell: cmd
+        export MOZBUILD_STATE_PATH="/d/mozbuild"
+        cd /d/mozilla-source/mozilla-unified
+        ./mach clobber
+        ./mach build
+        ./mach package
+      shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
+
+    - name: Pause Build
+      run: |
+        $PauseBuild = $true;
+        if($PauseBuild){
+        $path = "$($env:USERPROFILE)\Desktop\Delete me to continue build.txt"
+        # create "lock" file.
+        Set-Content -Path $path -Value ''    
+        Write-Warning "Build paused. To resume it, open a RDP session, delete 'Delete me to continue build.txt' file on Desktop."
+        # wait until "lock" file is deleted by user.
+        while(Test-Path $path) {
+          Start-Sleep -Seconds 1
+        }
+        Write-Host "Build lock file has been deleted. Resuming build."}
+      shell: powershell
       
     - name: List files
       run: |
-        C:\mozilla-build\start-shell.bat "cd /d/mozilla-source/mozilla-unified && ls -alh"
-      shell: cmd
+        cd /d/mozilla-source/mozilla-unified
+        ls -alh
+      shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
