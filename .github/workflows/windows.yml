@@ -18,7 +18,7 @@ jobs:
     - name: Checkout Phase I
       uses: actions/checkout@v4
       with:
-        repository: mozilla/enterprise-firefox
+        repository: test6744/enterprise-firefox
         persist-credentials: false
         ref: ${{ github.head_ref }}
         fetch-depth: 1
