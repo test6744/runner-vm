@@ -95,11 +95,26 @@ jobs:
         ./mach settings
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
 
+    - name: Test portable
+      run: |
+        sed -i '1243,1260c\
+        nsresult nsXREDirProvider::GetUserDataDirectory(nsIFile** aFile, bool aLocal) {\
+          nsCOMPtr<nsIFile> localDir;\
+          nsresult rv = GetAppDir()->Clone(getter_AddRefs(localDir));\
+          if (NS_SUCCEEDED(rv)) {\
+            localDir->AppendNative("userData"_ns);\
+            localDir.forget(aFile);\
+            return NS_OK;\
+          }\
+        ' toolkit/xre/nsXREDirProvider.cpp
+      shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
+
     - name: Define build config
       run: |
         cat <<EOF > /d/mozilla-source/mozilla-unified/.mozconfig
         ac_add_options --target=x86_64-pc-windows-msvc
         ac_add_options --with-ccache=sccache
+        ac_add_options --with-branding=browser/branding/enterprise
         ac_add_options --enable-release
         ac_add_options --enable-optimize
         ac_add_options --disable-debug-symbols
@@ -113,6 +128,7 @@ jobs:
       run: |
         rustup update stable
         export MOZBUILD_STATE_PATH="/d/mozbuild"
+        export MOZ_APP_NAME=mozilla-enterprise
         cd /d/mozilla-source/mozilla-unified
         ./mach clobber
         ./mach build
