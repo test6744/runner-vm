@@ -159,7 +159,7 @@ jobs:
       with:
         name: installer
         path: |
-          bj-firefox-windows/dist/*.installer.exe
+          obj-firefox-windows/dist/*.installer.exe
 
     - id: var
       name: Generate Build Info
