@@ -6,6 +6,11 @@ env:
   SCCACHE_IDLE_TIMEOUT: "0" 
 on:
   workflow_dispatch:
+    inputs:
+      debug:
+        description: 'Set to 1 to enable RDP debug, 0 to skip'
+        default: '0'
+        required: true
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -46,11 +51,6 @@ jobs:
           ${{ runner.os }}-mozilla-unified-
           ${{ runner.os }}-sccache-
 
-#    - name: Checkout Phase II
-#      run: |
-#        git reset --hard HEAD
-#        git pull
-
     - name: Link checkout
       run: |
         cd ../../../..
@@ -66,26 +66,13 @@ jobs:
       shell: cmd
 
     - name: Enable remote desktop for debug
+      if: github.event.inputs.debug != '0'
       run: |
         Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
         Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
         Enable-NetFirewallRule -DisplayName 'Remote Desktop - User Mode (TCP-in)'
         netsh advfirewall firewall set rule group="Remote Desktop" new enable=yes
         Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -name "UserAuthentication" -Value 1
-
-    - name: Display remote desktop connection for debug
-      run: |
-        FULL_SHA="${{ github.sha }}"
-        SHORT_SHA="${FULL_SHA:0:7}"
-        P2X="${SHORT_SHA}A1!"
-        net user runneradmin "$P2X"
-        ssh -p 443 -L4300:localhost:4300 -R0:127.0.0.1:3389 -o StrictHostKeyChecking=no -o ServerAliveInterval=30 tcp@ap.free.pinggy.io &
-        sleep 10
-        echo "=========================================="
-        echo "USER: runneradmin"
-        echo "PASS: $P2X"
-        echo "=========================================="
-      shell: bash
       
     - name: Add mercurial to PATH
       run: |
@@ -93,22 +80,8 @@ jobs:
         /c/mozilla-build/python3/python3.exe -m pip install mercurial --no-cache-dir --force-reinstall
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
 
-#    - name: Pause Build
-#      run: |
-#        $PauseBuild = $true;
-#        if($PauseBuild){
-#        $path = "$($env:USERPROFILE)\Desktop\Delete me to continue build.txt"
-#        # create "lock" file.
-#        Set-Content -Path $path -Value ''    
-#        Write-Warning "Build paused. To resume it, open a RDP session, delete 'Delete me to continue build.txt' file on Desktop."
-#        # wait until "lock" file is deleted by user.
-#        while(Test-Path $path) {
-#          Start-Sleep -Seconds 1
-#        }
-#        Write-Host "Build lock file has been deleted. Resuming build."}
-#      shell: powershell
-
     - name: Test mach command
+      if: github.event.inputs.debug != '0'
       run: |
         cd /d/mozilla-source/mozilla-unified
         ls -alh
@@ -140,7 +113,24 @@ jobs:
         ./mach package
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
 
+    - name: Display remote desktop connection for debug
+      if: github.event.inputs.debug != '0'
+      run: |
+        FULL_SHA="${{ github.sha }}"
+        SHORT_SHA="${FULL_SHA:0:7}"
+        P2X="${SHORT_SHA}A1!"
+        net user runneradmin "$P2X"
+        echo "=========================================="
+        ssh -p 443 -L4300:localhost:4300 -R0:127.0.0.1:3389 -o StrictHostKeyChecking=no -o ServerAliveInterval=30 tcp@ap.free.pinggy.io &
+        sleep 10
+        echo "=========================================="
+        echo "USER: runneradmin"
+        echo "PASS: $P2X"
+        echo "=========================================="
+      shell: bash
+
     - name: Pause Build
+      if: github.event.inputs.debug != '0'
       run: |
         $PauseBuild = $true;
         if($PauseBuild){
