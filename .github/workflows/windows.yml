@@ -16,6 +16,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: write
+
 jobs:
   build_firefox:
     runs-on: windows-2019
@@ -164,9 +167,9 @@ jobs:
     - id: var
       name: Generate Build Info
       run: |
+        git init
         echo "full_sha=$(git rev-parse HEAD)" >> $env:GITHUB_OUTPUT
         echo "short_sha=$(git rev-parse --short HEAD)" >> $env:GITHUB_OUTPUT
-      shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
 
   check_date:
     runs-on: ubuntu-latest
@@ -224,7 +227,7 @@ jobs:
           echo "File count: $(wc -l < filelist.sha256)"
 
       - name: Upload Firefox to GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v2.5.0
         with:
           name: Nightly v${{ needs.check_date.outputs.var_build_num }}.0a1-${{ github.run_number }} [${{ needs.build_firefox.outputs.short_sha }}]
           tag_name: nightly
@@ -247,3 +250,4 @@ jobs:
           files: |
             *.installer.exe
             *.sha256
+          token: ${{ env.GH_TOKEN }}
