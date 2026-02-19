@@ -1,4 +1,4 @@
-name: Build firefox on Windows
+name: Build on Windows
 env:
   GH_TOKEN: ${{ secrets.ACCESS_TOKEN }}
   SCCACHE_DIR: 'C:\Users\runneradmin\AppData\Local\Mozilla\sccache'
@@ -20,7 +20,7 @@ permissions:
   contents: write
 
 jobs:
-  build_firefox:
+  build:
     runs-on: windows-2019
     outputs:
       full_sha: ${{ steps.var.outputs.full_sha }}
@@ -126,7 +126,6 @@ jobs:
       
     - name: Build
       run: |
-        cargo install sccache
         rustup update stable
         export MOZBUILD_STATE_PATH="/d/mozbuild"
         export MOZ_APP_NAME=firefox-enterprise
@@ -191,7 +190,7 @@ jobs:
   check_date:
     runs-on: ubuntu-latest
     name: Check latest commit
-    needs: build_firefox
+    needs: build
     outputs:
       should_run: ${{ steps.should_run.outputs.should_run }}
       var_build_num: ${{ steps.var_build_num.outputs.var_build_num }}
@@ -220,7 +219,7 @@ jobs:
   create_release:
     runs-on: ubuntu-latest
     name: Create Release
-    needs: [ build_firefox, check_date ]
+    needs: [ build, check_date ]
     steps:
       - name: Download Artifact
         uses: actions/download-artifact@v7
@@ -262,7 +261,7 @@ jobs:
 
             Full Commit Hash:
             ```
-            ${{ needs.build_firefox.outputs.full_sha }}
+            ${{ needs.build.outputs.full_sha }}
             ```
           files: |
             *.installer.exe
