@@ -2,7 +2,7 @@ name: Build firefox on Windows
 env:
   GH_TOKEN: ${{ secrets.ACCESS_TOKEN }}
   SCCACHE_DIR: 'C:\Users\runneradmin\AppData\Local\Mozilla\sccache'
-  SCCACHE_CACHE_SIZE: "2G"
+  SCCACHE_CACHE_SIZE: "4G"
   SCCACHE_IDLE_TIMEOUT: "0" 
 on:
   workflow_dispatch:
@@ -120,7 +120,7 @@ jobs:
         ac_add_options --disable-debug-symbols
         ac_add_options --disable-tests
         ac_add_options --disable-debug
-        mk_add_options MOZ_OBJDIR=@TOPSRCDIR@/obj-firefox-windows
+        mk_add_options MOZ_OBJDIR=@TOPSRCDIR@/obj-x86_64-pc-windows-msvc
         EOF
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
       
@@ -128,7 +128,7 @@ jobs:
       run: |
         rustup update stable
         export MOZBUILD_STATE_PATH="/d/mozbuild"
-        export MOZ_APP_NAME=mozilla-enterprise
+        export MOZ_APP_NAME=firefox-enterprise
         cd /d/mozilla-source/mozilla-unified
         ./mach clobber
         ./mach build
@@ -178,7 +178,7 @@ jobs:
       with:
         name: installer
         path: |
-          obj-firefox-windows/dist/*.installer.exe
+          obj-x86_64-pc-windows-msvc/dist/*.installer.exe
 
     - id: var
       name: Generate Build Info
@@ -248,7 +248,7 @@ jobs:
           name: Nightly v${{ needs.check_date.outputs.var_build_num }}.0a1-${{ github.run_number }} [${{ needs.build_firefox.outputs.short_sha }}]
           tag_name: nightly
           body: |
-            **This release has been built by [[Github Actions](github-actions[bot])]**
+            **This release has been built by [Github Actions]**
             [Link to build](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
             
             Build SHA256:
@@ -257,7 +257,7 @@ jobs:
             ```
             To verify the build SHA256 during the action, click the build link, go-to "Create Release", open the Echo build sha256 step and read the sha256.
 
-            These are nightly builds of Mozilla Firefox (Enterprise Edition) from their repository
+            These are nightly/experimental builds of Mozilla Firefox (Enterprise Edition) and may be unstable; Use at your OWN risk :warning:.
 
             Full Commit Hash:
             ```
