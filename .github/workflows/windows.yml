@@ -145,7 +145,7 @@ jobs:
 
     - name: Apply portable profile patch
       run: |
-        git apply ..\portable.patch
+        git apply ../portable.patch
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
 
     - name: Define build config
