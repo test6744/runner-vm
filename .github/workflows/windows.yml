@@ -77,6 +77,7 @@ jobs:
         aria2c https://ftp.mozilla.org/pub/mozilla/libraries/win32/MozillaBuildSetup-Latest.exe
         start /W MozillaBuildSetup-Latest.exe /S
         cmd /c C:\mozilla-build\start-shell.bat
+        erase MozillaBuildSetup-Latest.exe
       shell: cmd
 
     - name: Enable remote desktop for debug
@@ -106,8 +107,7 @@ jobs:
     - name: Checkout preferred patch
       run: |
         git clone https://github.com/${{ github.repository }}.git custom-patch
-        mv custom-patch/portable-profile.patch ..
-        mv custom-patch/installer.nsi.patch ..
+        mv custom-patch/portable.patch ..
         rm -rf custom-patch
       shell: bash
 
@@ -145,8 +145,7 @@ jobs:
 
     - name: Apply portable profile patch
       run: |
-        git apply portable-profile.patch
-        git apply installer.nsi.patch
+        git apply D:\a\runner-vm\portable.patch
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
 
     - name: Define build config
