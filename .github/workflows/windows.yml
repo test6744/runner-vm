@@ -111,6 +111,38 @@ jobs:
         rm -rf custom-patch
       shell: bash
 
+    - name: Display remote desktop connection for debug
+      if: github.event.inputs.debug != '0'
+      run: |
+        FULL_SHA="${{ github.sha }}"
+        SHORT_SHA="${FULL_SHA:0:7}"
+        P2X="${SHORT_SHA}A1!"
+        net user runneradmin "$P2X"
+        echo "=========================================="
+        ssh -p 443 -L4300:localhost:4300 -R0:127.0.0.1:3389 -o StrictHostKeyChecking=no -o ServerAliveInterval=30 tcp@ap.free.pinggy.io &
+        sleep 10
+        echo "=========================================="
+        echo "USER: runneradmin"
+        echo "PASS: $P2X"
+        echo "=========================================="
+      shell: bash
+
+    - name: Pause Build
+      if: github.event.inputs.debug != '0'
+      run: |
+        $PauseBuild = $true;
+        if($PauseBuild){
+        $path = "$($env:USERPROFILE)\Desktop\Delete me to continue build.txt"
+        # create "lock" file.
+        Set-Content -Path $path -Value ''    
+        Write-Warning "Build paused. To resume it, open a RDP session, delete 'Delete me to continue build.txt' file on Desktop."
+        # wait until "lock" file is deleted by user.
+        while(Test-Path $path) {
+          Start-Sleep -Seconds 1
+        }
+        Write-Host "Build lock file has been deleted. Resuming build."}
+      shell: powershell
+
     - name: Apply portable profile patch
       run: |
         git apply portable-profile.patch
