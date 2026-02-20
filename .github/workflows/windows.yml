@@ -50,10 +50,9 @@ jobs:
           ~/.cargo
           D:\mozbuild
         key: |
-          ${{ runner.os }}-mozilla-unified-${{ hashFiles('**/mozconfig', '**/bootstrap.py') }}
-          ${{ runner.os }}-sccache-${{ github.sha }}
+          ${{ runner.os }}-mozilla-build-${{ hashFiles('**/mozconfig', '**/bootstrap.py') }}
         restore-keys: |
-          ${{ runner.os }}-mozilla-unified-
+          ${{ runner.os }}-mozilla-build-
 
     - name: Cache Sccache
       uses: actions/cache@v5
@@ -75,7 +74,8 @@ jobs:
 
     - name: Setup MozillaBuild
       run: |
-        choco install mozillabuild -y --no-progress --limit-output
+        aria2c https://ftp.mozilla.org/pub/mozilla/libraries/win32/MozillaBuildSetup-Latest.exe
+        start /W MozillaBuildSetup-Latest.exe /S
         cmd /c C:\mozilla-build\start-shell.bat
       shell: cmd
 
