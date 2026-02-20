@@ -103,66 +103,13 @@ jobs:
         ./mach settings
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
 
-    - name: Create portable patch
+    - name: Checkout preferred patch
       run: |
-        cat <<EOF > /d/mozilla-source/mozilla-unified/portable-profile.patch
-        diff --git a/toolkit/profile/nsToolkitProfileService.cpp b/toolkit/profile/nsToolkitProfileService.cpp
-        index a9db7077b1c4..9114425c550c 100644
-        --- a/toolkit/profile/nsToolkitProfileService.cpp
-        +++ b/toolkit/profile/nsToolkitProfileService.cpp
-        @@ -970,11 +970,23 @@ nsresult nsToolkitProfileService::Init() {
-           NS_ASSERTION(gDirServiceProvider, "No dirserviceprovider!");
-           nsresult rv;
-         
-        -  rv = nsXREDirProvider::GetUserAppDataDirectory(getter_AddRefs(mAppData));
-        +  //rv = nsXREDirProvider::GetUserAppDataDirectory(getter_AddRefs(mAppData));
-        +  // Portable mode: use directory next to binary
-        +  nsCOMPtr<nsIFile> appDir;
-        +  rv = NS_GetSpecialDirectory(NS_XPCOM_CURRENT_PROCESS_DIR,
-        +                            getter_AddRefs(appDir));
-           NS_ENSURE_SUCCESS(rv, rv);
-        -
-        -  rv = nsXREDirProvider::GetUserLocalDataDirectory(getter_AddRefs(mTempData));
-        +  
-        +  // Append "userData" folder
-        +  rv = appDir->AppendNative("userData"_ns);
-           NS_ENSURE_SUCCESS(rv, rv);
-        +  
-        +  // Force profile service to use this path
-        +  mAppData = appDir;
-        +  mTempData = appDir;
-        +
-        +  //rv = nsXREDirProvider::GetUserLocalDataDirectory(getter_AddRefs(mTempData));
-        +  //NS_ENSURE_SUCCESS(rv, rv);
-         
-           rv = mAppData->Clone(getter_AddRefs(mProfileDBFile));
-           NS_ENSURE_SUCCESS(rv, rv);
-        EOF
-      shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
-
-    - name: Create installer patch
-      run: |
-        cat <<EOF > /d/mozilla-source/mozilla-unified/installer.nsi.patch
-        diff --git a/browser/installer/windows/nsis/installer.nsi b/browser/installer/windows/nsis/installer.nsi
-        index c93fad5eb12b..c97c83b3dc9a 100755
-        --- a/browser/installer/windows/nsis/installer.nsi
-        +++ b/browser/installer/windows/nsis/installer.nsi
-        @@ -353,6 +353,13 @@ Section "-Application" APP_IDX
-           ${CopyFilesFromDir} "$EXEDIR\core" "$INSTDIR" \
-                               "$(ERROR_CREATE_DIRECTORY_PREFIX)" \
-                               "$(ERROR_CREATE_DIRECTORY_SUFFIX)"
-        +  
-        +  ; Create the portable userData (Profile) folder
-        +  CreateDirectory "$INSTDIR\userData"
-        +
-        +  ; Set permissions: Full Control for Users group
-        +  AccessControl::GrantOnFile "$INSTDIR\userData" "(BU)" "FullAccess"
-        +  Pop $0
-         
-           ; Register DLLs
-           ; XXXrstrong - AccessibleMarshal.dll can be used by multiple applications but
-        EOF
-      shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
+        git clone https://github.com/${{ github.repository }}.git custom-patch
+        mv custom-patch/portable-profile.patch ..
+        mv custom-patch/installer.nsi.patch ..
+        rm -rf custom-patch
+      shell: bash
 
     - name: Apply portable profile patch
       run: |
