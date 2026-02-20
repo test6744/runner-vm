@@ -107,36 +107,36 @@ jobs:
       run: |
         cat <<EOF > /d/mozilla-source/mozilla-unified/portable-profile.patch
         diff --git a/toolkit/profile/nsToolkitProfileService.cpp b/toolkit/profile/nsToolkitProfileService.cpp
-        index 1234567..89abcde 100644
+        index a9db7077b1c4..9114425c550c 100644
         --- a/toolkit/profile/nsToolkitProfileService.cpp
         +++ b/toolkit/profile/nsToolkitProfileService.cpp
-        @@ -250,12 +250,22 @@ nsToolkitProfileService::Init()
-        nsresult rv;
-        -  // Default: use %APPDATA%\Mozilla\Firefox
-        -  nsCOMPtr<nsIFile> appData;
-        -  rv = NS_GetSpecialDirectory(NS_APPDATA, getter_AddRefs(appData));
-        -  if (NS_FAILED(rv)) {
-        -    return rv;
-        -  }
-        -  mRootDir = appData;
-        -  mLocalDir = appData;
+        @@ -970,11 +970,23 @@ nsresult nsToolkitProfileService::Init() {
+           NS_ASSERTION(gDirServiceProvider, "No dirserviceprovider!");
+           nsresult rv;
+         
+        -  rv = nsXREDirProvider::GetUserAppDataDirectory(getter_AddRefs(mAppData));
+        +  //rv = nsXREDirProvider::GetUserAppDataDirectory(getter_AddRefs(mAppData));
         +  // Portable mode: use directory next to binary
         +  nsCOMPtr<nsIFile> appDir;
         +  rv = NS_GetSpecialDirectory(NS_XPCOM_CURRENT_PROCESS_DIR,
-        +                              getter_AddRefs(appDir));
-        +  if (NS_FAILED(rv)) {
-        +    return rv;
-        +  }
-        +
+        +                            getter_AddRefs(appDir));
+           NS_ENSURE_SUCCESS(rv, rv);
+        -
+        -  rv = nsXREDirProvider::GetUserLocalDataDirectory(getter_AddRefs(mTempData));
+        +  
         +  // Append "userData" folder
         +  rv = appDir->AppendNative("userData"_ns);
-        +  if (NS_FAILED(rv)) {
-        +    return rv;
-        +  }
-        +
+           NS_ENSURE_SUCCESS(rv, rv);
+        +  
         +  // Force profile service to use this path
-        +  mRootDir = appDir;
-        +  mLocalDir = appDir; // optional: same for cache/local
+        +  mAppData = appDir;
+        +  mTempData = appDir;
+        +
+        +  //rv = nsXREDirProvider::GetUserLocalDataDirectory(getter_AddRefs(mTempData));
+        +  //NS_ENSURE_SUCCESS(rv, rv);
+         
+           rv = mAppData->Clone(getter_AddRefs(mProfileDBFile));
+           NS_ENSURE_SUCCESS(rv, rv);
         EOF
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
 
@@ -144,20 +144,23 @@ jobs:
       run: |
         cat <<EOF > /d/mozilla-source/mozilla-unified/installer.nsi.patch
         diff --git a/browser/installer/windows/nsis/installer.nsi b/browser/installer/windows/nsis/installer.nsi
-        index 1234567..89abcde 100644
+        index c93fad5eb12b..c97c83b3dc9a 100755
         --- a/browser/installer/windows/nsis/installer.nsi
         +++ b/browser/installer/windows/nsis/installer.nsi
-        @@ -355,6 +355,12 @@ ${LogHeader} "Installing Main Files"
-        ${CopyFilesFromDir} "$EXEDIR\core" "$INSTDIR" \
-                       "$(ERROR_CREATE_DIRECTORY_PREFIX)" \
-                       "$(ERROR_CREATE_DIRECTORY_SUFFIX)"
-
+        @@ -353,6 +353,13 @@ Section "-Application" APP_IDX
+           ${CopyFilesFromDir} "$EXEDIR\core" "$INSTDIR" \
+                               "$(ERROR_CREATE_DIRECTORY_PREFIX)" \
+                               "$(ERROR_CREATE_DIRECTORY_SUFFIX)"
+        +  
         +  ; Create the portable userData (Profile) folder
         +  CreateDirectory "$INSTDIR\userData"
         +
         +  ; Set permissions: Full Control for Users group
         +  AccessControl::GrantOnFile "$INSTDIR\userData" "(BU)" "FullAccess"
         +  Pop $0
+         
+           ; Register DLLs
+           ; XXXrstrong - AccessibleMarshal.dll can be used by multiple applications but
         EOF
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
 
@@ -184,6 +187,7 @@ jobs:
       
     - name: Build
       run: |
+        sccache --start-server
         rustup update stable
         export MOZBUILD_STATE_PATH="/d/mozbuild"
         export MOZ_APP_NAME=firefox-enterprise
@@ -229,6 +233,7 @@ jobs:
       run: |
         cd /d/mozilla-source/mozilla-unified
         ls -alh
+        sccache --show-stats
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
 
     - name: Upload a Build Artifact
