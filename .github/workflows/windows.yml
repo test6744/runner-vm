@@ -112,8 +112,7 @@ jobs:
     - name: Checkout preferred patch
       run: |
         git clone https://github.com/${{ github.repository }}.git custom-patch
-        mv custom-patch/nsToolkitProfileService.cpp.patch ../runner-vm
-        mv custom-patch/installer.nsi.patch ../runner-vm
+        7z x custom-patch/patch.zip -o../runner-vm
         rm -rf custom-patch
       shell: bash
 
