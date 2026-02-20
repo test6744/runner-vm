@@ -1,7 +1,7 @@
 name: Build on Windows
 env:
   GH_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-  SCCACHE_DIR: 'C:\Users\runneradmin\AppData\Local\Mozilla\sccache'
+  SCCACHE_DIR: 'C:/Users/runneradmin/AppData/Local/Mozilla/sccache'
   SCCACHE_CACHE_SIZE: "4G"
   SCCACHE_IDLE_TIMEOUT: "0" 
 on:
@@ -41,20 +41,28 @@ jobs:
           core.exportVariable('ACTIONS_RESULTS_URL', process.env.ACTIONS_RESULTS_URL || '');
           core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
         
-    - name: Cache
+    - name: Cache build state
       uses: actions/cache@v5
       with:
         path: |
           ~/.mozbuild
           ~/.rustup
           ~/.cargo
-          ~\AppData\Local\Mozilla\sccache
           D:\mozbuild
         key: |
           ${{ runner.os }}-mozilla-unified-${{ hashFiles('**/mozconfig', '**/bootstrap.py') }}
           ${{ runner.os }}-sccache-${{ github.sha }}
         restore-keys: |
           ${{ runner.os }}-mozilla-unified-
+
+    - name: Cache Sccache
+      uses: actions/cache@v5
+      with:
+        path: |
+          ${{ env.SCCACHE_DIR }}
+        key: |
+          ${{ runner.os }}-sccache-${{ github.sha }}
+        restore-keys: |
           ${{ runner.os }}-sccache-
 
     - name: Link checkout
@@ -95,19 +103,69 @@ jobs:
         ./mach settings
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
 
-#    - name: Test portable
-#      run: |
-#        sed -i '1243,1260c\
-#        nsresult nsXREDirProvider::GetUserDataDirectory(nsIFile** aFile, bool aLocal) {\
-#          nsCOMPtr<nsIFile> localDir;\
-#          nsresult rv = GetAppDir()->Clone(getter_AddRefs(localDir));\
-#          if (NS_SUCCEEDED(rv)) {\
-#            localDir->AppendNative("userData"_ns);\
-#            localDir.forget(aFile);\
-#            return NS_OK;\
-#          }\
-#        ' toolkit/xre/nsXREDirProvider.cpp
-#      shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
+    - name: Create portable patch
+      run: |
+        cat <<EOF > /d/mozilla-source/mozilla-unified/portable-profile.patch
+        diff --git a/toolkit/profile/nsToolkitProfileService.cpp b/toolkit/profile/nsToolkitProfileService.cpp
+        index 1234567..89abcde 100644
+        --- a/toolkit/profile/nsToolkitProfileService.cpp
+        +++ b/toolkit/profile/nsToolkitProfileService.cpp
+        @@ -250,12 +250,22 @@ nsToolkitProfileService::Init()
+        nsresult rv;
+        -  // Default: use %APPDATA%\Mozilla\Firefox
+        -  nsCOMPtr<nsIFile> appData;
+        -  rv = NS_GetSpecialDirectory(NS_APPDATA, getter_AddRefs(appData));
+        -  if (NS_FAILED(rv)) {
+        -    return rv;
+        -  }
+        -  mRootDir = appData;
+        -  mLocalDir = appData;
+        +  // Portable mode: use directory next to binary
+        +  nsCOMPtr<nsIFile> appDir;
+        +  rv = NS_GetSpecialDirectory(NS_XPCOM_CURRENT_PROCESS_DIR,
+        +                              getter_AddRefs(appDir));
+        +  if (NS_FAILED(rv)) {
+        +    return rv;
+        +  }
+        +
+        +  // Append "userData" folder
+        +  rv = appDir->AppendNative("userData"_ns);
+        +  if (NS_FAILED(rv)) {
+        +    return rv;
+        +  }
+        +
+        +  // Force profile service to use this path
+        +  mRootDir = appDir;
+        +  mLocalDir = appDir; // optional: same for cache/local
+        EOF
+      shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
+
+    - name: Create installer patch
+      run: |
+        cat <<EOF > /d/mozilla-source/mozilla-unified/installer.nsi.patch
+        diff --git a/browser/installer/windows/nsis/installer.nsi b/browser/installer/windows/nsis/installer.nsi
+        index 1234567..89abcde 100644
+        --- a/browser/installer/windows/nsis/installer.nsi
+        +++ b/browser/installer/windows/nsis/installer.nsi
+        @@ -355,6 +355,12 @@ ${LogHeader} "Installing Main Files"
+        ${CopyFilesFromDir} "$EXEDIR\core" "$INSTDIR" \
+                       "$(ERROR_CREATE_DIRECTORY_PREFIX)" \
+                       "$(ERROR_CREATE_DIRECTORY_SUFFIX)"
+
+        +  ; Create the portable userData (Profile) folder
+        +  CreateDirectory "$INSTDIR\userData"
+        +
+        +  // Set permissions: Full Control for Users group
+        +  AccessControl::GrantOnFile "$INSTDIR\userData" "(BU)" "FullAccess"
+        +  Pop $0
+        EOF
+      shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
+
+    - name: Apply portable profile patch
+      run: |
+        git apply portable-profile.patch
+        git apply installer.nsi.patch
+      shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
 
     - name: Define build config
       run: |
