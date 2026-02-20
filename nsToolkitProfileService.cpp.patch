@@ -1,0 +1,28 @@
+diff --git a/toolkit/profile/nsToolkitProfileService.cpp b/toolkit/profile/nsToolkitProfileService.cpp
+index a9db7077b1..93b975a564 100644
+--- a/toolkit/profile/nsToolkitProfileService.cpp
++++ b/toolkit/profile/nsToolkitProfileService.cpp
+@@ -970,11 +970,21 @@ nsresult nsToolkitProfileService::Init() {
+   NS_ASSERTION(gDirServiceProvider, "No dirserviceprovider!");
+   nsresult rv;
+ 
+-  rv = nsXREDirProvider::GetUserAppDataDirectory(getter_AddRefs(mAppData));
++  //rv = nsXREDirProvider::GetUserAppDataDirectory(getter_AddRefs(mAppData));
++  // Portable mode: use directory next to binary
++  nsCOMPtr<nsIFile> appDir;
++  rv = NS_GetSpecialDirectory(NS_XPCOM_CURRENT_PROCESS_DIR,
++                       getter_AddRefs(appDir));
+   NS_ENSURE_SUCCESS(rv, rv);
+ 
+-  rv = nsXREDirProvider::GetUserLocalDataDirectory(getter_AddRefs(mTempData));
++  //rv = nsXREDirProvider::GetUserLocalDataDirectory(getter_AddRefs(mTempData));
++  // Append "userData" folder
++  rv = appDir->AppendNative("userData"_ns);
+   NS_ENSURE_SUCCESS(rv, rv);
++  
++  // Force profile service to use this path
++  mAppData = appDir;
++  mTempData = appDir;
+ 
+   rv = mAppData->Clone(getter_AddRefs(mProfileDBFile));
+   NS_ENSURE_SUCCESS(rv, rv);
