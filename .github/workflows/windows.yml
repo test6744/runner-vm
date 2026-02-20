@@ -107,7 +107,8 @@ jobs:
     - name: Checkout preferred patch
       run: |
         git clone https://github.com/${{ github.repository }}.git custom-patch
-        mv custom-patch/portable.patch ..
+        mv custom-patch/nsToolkitProfileService.cpp.patch ..
+        mv custom-patch/installer.nsi.patch ..
         rm -rf custom-patch
       shell: bash
 
@@ -145,7 +146,8 @@ jobs:
 
     - name: Apply portable profile patch
       run: |
-        git apply ../portable.patch
+        git apply ../installer.nsi.patch
+        git apply ../nsToolkitProfileService.cpp.patch
       shell: bash
 
     - name: Define build config
