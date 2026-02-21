@@ -10,12 +10,12 @@ on:
     inputs:
       debug:
         description: 'DEBUG mode - TRUE enables RDP SESSION'
-        default: 'FALSE'
+        default: false
         required: true
         type: choice
         options:
-        - TRUE
-        - FALSE
+        - true
+        - false
       build_mode:
         description: 'BUILD mode'
         default: 'Full'
@@ -103,7 +103,7 @@ jobs:
       shell: cmd
 
     - name: Enable remote desktop for debug
-      if: github.event.inputs.debug != 'FALSE'
+      if: github.event.inputs.debug != false
       run: |
         Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
         Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
@@ -118,7 +118,7 @@ jobs:
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
 
     - name: Test mach command
-      if: github.event.inputs.debug != 'FALSE'
+      if: github.event.inputs.debug != false
       run: |
         cd /d/mozilla-source/mozilla-unified
         ls -alh
@@ -135,7 +135,7 @@ jobs:
       shell: bash
 
     - name: Display remote desktop connection for debug (Phase I)
-      if: github.event.inputs.debug != 'FALSE'
+      if: github.event.inputs.debug != false
       run: |
         FULL_SHA="${{ github.sha }}"
         SHORT_SHA="${FULL_SHA:0:7}"
@@ -151,7 +151,7 @@ jobs:
       shell: bash
 
     - name: Pause Build (Phase I)
-      if: github.event.inputs.debug != 'FALSE'
+      if: github.event.inputs.debug != false
       run: |
         $PauseBuild = $true;
         if($PauseBuild){
@@ -167,7 +167,7 @@ jobs:
       shell: powershell
 
     - name: Apply patch
-      if: github.event.inputs.debug != 'FALSE'
+      if: github.event.inputs.debug != false
       run: |
         git apply installer.nsi.patch
         git apply test.patch
@@ -224,7 +224,7 @@ jobs:
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
 
     - name: Display remote desktop connection for debug (Phase II)
-      if: github.event.inputs.debug != 'FALSE'
+      if: github.event.inputs.debug != false
       run: |
         taskkill //F //IM ssh.exe //T || true
         FULL_SHA="${{ github.sha }}"
@@ -241,7 +241,7 @@ jobs:
       shell: bash
 
     - name: Pause Build (Phase II)
-      if: github.event.inputs.debug != 'FALSE'
+      if: github.event.inputs.debug != false
       run: |
         $PauseBuild = $true;
         if($PauseBuild){
