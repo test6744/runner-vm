@@ -55,7 +55,7 @@ jobs:
       uses: actions/cache@v5
       with:
         path: |
-          ${{ env.SCCACHE_DIR }}
+          C:/Users/runneradmin/AppData/Local/Mozilla/sccache
         key: |
           ${{ runner.os }}-sccache-${{ hashFiles('**/Cargo.lock') }}
         restore-keys: |
