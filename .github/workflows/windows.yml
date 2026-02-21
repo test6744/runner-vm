@@ -9,9 +9,13 @@ on:
   workflow_dispatch:
     inputs:
       debug:
-        description: 'DEBUG mode - 1 enables RDP SESSION'
-        default: '0'
+        description: 'DEBUG mode - TRUE enables RDP SESSION'
+        default: 'FALSE'
         required: true
+        type: choice
+        options:
+        - TRUE
+        - FALSE
       build_mode:
         description: 'BUILD mode'
         default: 'Full'
@@ -99,7 +103,7 @@ jobs:
       shell: cmd
 
     - name: Enable remote desktop for debug
-      if: github.event.inputs.debug != '0'
+      if: github.event.inputs.debug != 'FALSE'
       run: |
         Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
         Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
@@ -114,7 +118,7 @@ jobs:
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
 
     - name: Test mach command
-      if: github.event.inputs.debug != '0'
+      if: github.event.inputs.debug != 'FALSE'
       run: |
         cd /d/mozilla-source/mozilla-unified
         ls -alh
@@ -131,7 +135,7 @@ jobs:
       shell: bash
 
     - name: Display remote desktop connection for debug (Phase I)
-      if: github.event.inputs.debug != '0'
+      if: github.event.inputs.debug != 'FALSE'
       run: |
         FULL_SHA="${{ github.sha }}"
         SHORT_SHA="${FULL_SHA:0:7}"
@@ -147,7 +151,7 @@ jobs:
       shell: bash
 
     - name: Pause Build (Phase I)
-      if: github.event.inputs.debug != '0'
+      if: github.event.inputs.debug != 'FALSE'
       run: |
         $PauseBuild = $true;
         if($PauseBuild){
@@ -162,14 +166,14 @@ jobs:
         Write-Host "Build lock file has been deleted. Resuming build."}
       shell: powershell
 
-    - name: Apply portable profile patch (${{ inputs.build_mode }})
-      if: github.event.inputs.build_mode == 'Full'
+    - name: Apply patch
+      if: github.event.inputs.debug != 'FALSE'
       run: |
         git apply installer.nsi.patch
         git apply test.patch
       shell: bash
 
-    - name: Define build config (${{ inputs.build_mode }})
+    - name: Define build config
       if: github.event.inputs.build_mode == 'Full'
       run: |
         cat <<EOF > /d/mozilla-source/mozilla-unified/.mozconfig
@@ -185,7 +189,7 @@ jobs:
         EOF
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
 
-    - name: Define build config (${{ inputs.build_mode }})
+    - name: Define build config
       if: github.event.inputs.build_mode == 'Artifact'
       run: |
         cat <<EOF > /d/mozilla-source/mozilla-unified/.mozconfig
@@ -194,7 +198,7 @@ jobs:
         EOF
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
       
-    - name: Build (${{ inputs.build_mode }})
+    - name: Build
       if: github.event.inputs.build_mode == 'Full'
       run: |
         sccache --start-server
@@ -207,7 +211,7 @@ jobs:
         ./mach package
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
 
-    - name: Build (${{ inputs.build_mode }})
+    - name: Build
       if: github.event.inputs.build_mode == 'Artifact'
       run: |
         sccache --start-server
@@ -220,7 +224,7 @@ jobs:
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
 
     - name: Display remote desktop connection for debug (Phase II)
-      if: github.event.inputs.debug != '0'
+      if: github.event.inputs.debug != 'FALSE'
       run: |
         taskkill //F //IM ssh.exe //T || true
         FULL_SHA="${{ github.sha }}"
@@ -237,7 +241,7 @@ jobs:
       shell: bash
 
     - name: Pause Build (Phase II)
-      if: github.event.inputs.debug != '0'
+      if: github.event.inputs.debug != 'FALSE'
       run: |
         $PauseBuild = $true;
         if($PauseBuild){
