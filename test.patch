@@ -1,0 +1,107 @@
+diff --git a/build/application.ini.in b/build/application.ini.in
+index 34f11a7c97..b35ba81f44 100644
+--- a/build/application.ini.in
++++ b/build/application.ini.in
+@@ -16,19 +16,14 @@
+ #include @TOPOBJDIR@/buildid.h
+ #include @TOPOBJDIR@/source-repo.h
+ [App]
+-Vendor=@MOZ_APP_VENDOR@
+-Name=@MOZ_APP_BASENAME@
+-RemotingName=@MOZ_APP_REMOTINGNAME@
+-#ifdef MOZ_APP_DISPLAYNAME
+-CodeName=@MOZ_APP_DISPLAYNAME@
+-#endif
++
++Vendor=EnterpriseFirefox
++Name=EnterpriseFirefox
++RemotingName=EnterpriseFirefox
++CodeName=EnterpriseFirefox
+ Version=@MOZ_APP_VERSION@
+-#ifdef MOZ_APP_PROFILE
+-Profile=@MOZ_APP_PROFILE@
+-#endif
+-#ifdef MOZ_APP_UA_NAME
+-UAName=@MOZ_APP_UA_NAME@
+-#endif
++Profile=enterprise-firefox
++UAName=EnterpriseFirefox
+ BuildID=@MOZ_BUILDID@
+ #ifdef MOZ_SOURCE_REPO
+ SourceRepository=@MOZ_SOURCE_REPO@
+@@ -36,7 +31,7 @@ SourceRepository=@MOZ_SOURCE_REPO@
+ #ifdef MOZ_SOURCE_STAMP
+ SourceStamp=@MOZ_SOURCE_STAMP@
+ #endif
+-ID=@MOZ_APP_ID@
++ID=enterprise-firefox@mozilla.org
+ 
+ [Gecko]
+ MinVersion=@GRE_MILESTONE@
+diff --git a/toolkit/xre/nsAppRunner.cpp b/toolkit/xre/nsAppRunner.cpp
+index 2f9543044f..0643278a01 100644
+--- a/toolkit/xre/nsAppRunner.cpp
++++ b/toolkit/xre/nsAppRunner.cpp
+@@ -3153,38 +3153,34 @@ static nsresult SelectProfile(nsToolkitProfileService* aProfileSvc,
+   }
+ #endif
+ 
+-  // Ask the profile manager to select the profile directories to use.
+-  bool didCreate = false;
+-  rv = aProfileSvc->SelectStartupProfile(&gArgc, gArgv, gDoProfileReset,
+-                                         aRootDir, aLocalDir, aProfile,
+-                                         &didCreate, aWasDefaultSelection);
+-
+-  if (rv == NS_ERROR_SHOW_PROFILE_MANAGER) {
+-    return ShowProfileManager(aProfileSvc, aNative);
+-  }
+-
+-  NS_ENSURE_SUCCESS(rv, rv);
+-
+-  if (didCreate) {
+-    // For a fresh install, we would like to let users decide
+-    // to do profile migration on their own later after using.
+-    gDoProfileReset = false;
+-    gDoMigration = false;
+-  }
+-
+-  if (gDoProfileReset && !*aProfile) {
+-    NS_WARNING("Profile reset is only supported for named profiles.");
++  // Patch: Always use 'userData' folder next to EXE for portable profile
++  nsCOMPtr<nsIFile> exeDir;
++  nsresult dirRv = NS_GetSpecialDirectory(NS_GRE_BIN_DIR, getter_AddRefs(exeDir));
++  if (NS_FAILED(dirRv) || !exeDir) {
++    NS_WARNING("Failed to get executable directory for portable profile.");
+     return NS_ERROR_ABORT;
+   }
+-
+-  // No profile could be found. This generally shouldn't happen, a new profile
+-  // should be created in all cases except for profile reset which is covered
+-  // above, but just in case...
+-  if (!*aRootDir) {
+-    NS_WARNING("Failed to select or create profile.");
++  dirRv = exeDir->AppendNative("userData"_ns);
++  if (NS_FAILED(dirRv)) {
++    NS_WARNING("Failed to append userData folder for portable profile.");
+     return NS_ERROR_ABORT;
+   }
+-
++  bool exists = false;
++  dirRv = exeDir->Exists(&exists);
++  if (!exists) {
++    dirRv = exeDir->Create(nsIFile::DIRECTORY_TYPE, 0700);
++    if (NS_FAILED(dirRv)) {
++      NS_WARNING("Failed to create userData folder for portable profile.");
++      return NS_ERROR_ABORT;
++    }
++  }
++  nsCOMPtr<nsIFile> localDir = exeDir;
++  exeDir.forget(aRootDir);
++  localDir.forget(aLocalDir);
++  *aProfile = nullptr;
++  if (aWasDefaultSelection) {
++    *aWasDefaultSelection = true;
++  }
+   return NS_OK;
+ }
+ 
