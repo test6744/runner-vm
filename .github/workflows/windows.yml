@@ -9,9 +9,26 @@ on:
   workflow_dispatch:
     inputs:
       debug:
-        description: 'Set to 1 to enable RDP debug, 0 to skip'
+        description: 'DEBUG mode - 1 enables RDP SESSION'
         default: '0'
         required: true
+      build_mode:
+        description: 'BUILD mode'
+        default: 'Full'
+        required: true
+        type: choice
+        options:
+        - Artifact
+        - Full
+      variant:
+        description: 'Release Type'
+        default: 'Stable Release (Official)'
+        required: true
+        type: choice
+        options:
+        - Enterprise Release (Official)
+        - Stable Release (Official)
+        - Stable Release (Deprecated)
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -30,7 +47,12 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
       with:
-        repository: mozilla/enterprise-firefox
+        repository: >-
+          ${{ 
+            inputs.variant == 'Enterprise Release (Official)' && 'mozilla/enterprise-firefox' ||
+            inputs.variant == 'Stable Release (Official)'     && 'mozilla-firefox/firefox' ||
+            inputs.variant == 'Stable Release (Deprecated)'     && 'mozilla/gecko-dev'
+          }}
         persist-credentials: false
         ref: ${{ github.head_ref }}
         fetch-depth: 1
@@ -108,7 +130,7 @@ jobs:
         rm -rf custom-patch
       shell: bash
 
-    - name: Display remote desktop connection for debug
+    - name: Display remote desktop connection for debug (Phase I)
       if: github.event.inputs.debug != '0'
       run: |
         FULL_SHA="${{ github.sha }}"
@@ -124,7 +146,7 @@ jobs:
         echo "=========================================="
       shell: bash
 
-    - name: Pause Build
+    - name: Pause Build (Phase I)
       if: github.event.inputs.debug != '0'
       run: |
         $PauseBuild = $true;
@@ -147,6 +169,7 @@ jobs:
       shell: bash
 
     - name: Define build config
+      if: github.event.inputs.build_mode == 'Full'
       run: |
         cat <<EOF > /d/mozilla-source/mozilla-unified/.mozconfig
         ac_add_options --target=x86_64-pc-windows-msvc
@@ -160,8 +183,18 @@ jobs:
         mk_add_options MOZ_OBJDIR=@TOPSRCDIR@/obj-x86_64-pc-windows-msvc
         EOF
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
+
+    - name: Define build config
+      if: github.event.inputs.build_mode == 'Artifact'
+      run: |
+        cat <<EOF > /d/mozilla-source/mozilla-unified/.mozconfig
+        ac_add_options --target=x86_64-pc-windows-msvc
+        mk_add_options MOZ_OBJDIR=@TOPSRCDIR@/obj-x86_64-pc-windows-msvc
+        EOF
+      shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
       
     - name: Build
+      if: github.event.inputs.build_mode == 'Full'
       run: |
         sccache --start-server
         rustup update stable
@@ -173,9 +206,22 @@ jobs:
         ./mach package
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
 
-    - name: Display remote desktop connection for debug
+    - name: Build
+      if: github.event.inputs.build_mode == 'Artifact'
+      run: |
+        sccache --start-server
+        rustup update stable
+        export MOZBUILD_STATE_PATH="/d/mozbuild"
+        cd /d/mozilla-source/mozilla-unified
+        ./mach clobber
+        ./mach build
+        ./mach package
+      shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
+
+    - name: Display remote desktop connection for debug (Phase II)
       if: github.event.inputs.debug != '0'
       run: |
+        taskkill //F //IM ssh.exe //T || true
         FULL_SHA="${{ github.sha }}"
         SHORT_SHA="${FULL_SHA:0:7}"
         P2X="${SHORT_SHA}A1!"
@@ -189,7 +235,7 @@ jobs:
         echo "=========================================="
       shell: bash
 
-    - name: Pause Build
+    - name: Pause Build (Phase II)
       if: github.event.inputs.debug != '0'
       run: |
         $PauseBuild = $true;
