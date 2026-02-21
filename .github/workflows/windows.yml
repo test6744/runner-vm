@@ -285,7 +285,7 @@ jobs:
       - name: Upload Firefox to GitHub Release
         uses: softprops/action-gh-release@v2.5.0
         with:
-          name: Nightly v${{ needs.check_date.outputs.var_build_num }}.0a1-${{ github.run_number }} [${{ needs.build.outputs.short_sha }}]
+          name: Nightly v${{ needs.check_date.outputs.var_build_num }}-${{ github.run_number }} [${{ needs.build.outputs.short_sha }}]
           tag_name: nightly
           body: |
             **This release has been built by [Github Actions]**
