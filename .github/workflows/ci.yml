@@ -64,11 +64,11 @@ jobs:
         python -m pip install mercurial --no-cache-dir --force-reinstall
         echo "$env:USERPROFILE\AppData\Roaming\Python\Python311\Scripts" >> $env:GITHUB_PATH
       shell: pwsh
-    - name: Run Mercurial in WSL
-      run: |
-        wsl sudo apt-get update
-        wsl sudo apt-get install -y mercurial
-        wsl hg --version
+#    - name: Run Mercurial in WSL
+#      run: |
+#        wsl sudo apt-get update
+#        wsl sudo apt-get install -y mercurial
+#        wsl hg --version
     - name: Display remote desktop connection for debug (Phase I)
       run: |
         FULL_SHA="${{ github.sha }}"
