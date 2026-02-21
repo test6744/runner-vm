@@ -44,7 +44,7 @@ jobs:
       full_sha: ${{ steps.var.outputs.full_sha }}
       short_sha: ${{ steps.var.outputs.short_sha }}
     steps:
-    - name: Checkout
+    - name: Checkout (${{ inputs.variant }})
       uses: actions/checkout@v4
       with:
         repository: >-
@@ -54,7 +54,6 @@ jobs:
             inputs.variant == 'Stable Release (Deprecated)'     && 'mozilla/gecko-dev'
           }}
         persist-credentials: false
-        ref: ${{ github.head_ref }}
         fetch-depth: 1
 
     - name: Run sccache-cache
@@ -124,6 +123,7 @@ jobs:
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
 
     - name: Checkout preferred patch
+      if: github.event.inputs.build_mode == 'Full'
       run: |
         git clone https://github.com/${{ github.repository }}.git custom-patch
         7z x custom-patch/patch.zip -o../runner-vm
@@ -162,13 +162,14 @@ jobs:
         Write-Host "Build lock file has been deleted. Resuming build."}
       shell: powershell
 
-    - name: Apply portable profile patch
+    - name: Apply portable profile patch (${{ inputs.build_mode }})
+      if: github.event.inputs.build_mode == 'Full'
       run: |
         git apply installer.nsi.patch
         git apply test.patch
       shell: bash
 
-    - name: Define build config
+    - name: Define build config (${{ inputs.build_mode }})
       if: github.event.inputs.build_mode == 'Full'
       run: |
         cat <<EOF > /d/mozilla-source/mozilla-unified/.mozconfig
@@ -184,7 +185,7 @@ jobs:
         EOF
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
 
-    - name: Define build config
+    - name: Define build config (${{ inputs.build_mode }})
       if: github.event.inputs.build_mode == 'Artifact'
       run: |
         cat <<EOF > /d/mozilla-source/mozilla-unified/.mozconfig
@@ -193,7 +194,7 @@ jobs:
         EOF
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
       
-    - name: Build
+    - name: Build (${{ inputs.build_mode }})
       if: github.event.inputs.build_mode == 'Full'
       run: |
         sccache --start-server
@@ -206,7 +207,7 @@ jobs:
         ./mach package
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
 
-    - name: Build
+    - name: Build (${{ inputs.build_mode }})
       if: github.event.inputs.build_mode == 'Artifact'
       run: |
         sccache --start-server
