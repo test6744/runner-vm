@@ -10,7 +10,7 @@ jobs:
   build_phase_1:
     env:
       GH_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-    runs-on: ubuntu-latest
+    runs-on: codespaces-prebuild
     steps:
     - name: Update components
       run: |
