@@ -2,7 +2,6 @@ name: Build on Windows
 env:
   GH_TOKEN: ${{ secrets.ACCESS_TOKEN }}
   SCCACHE_DIR: 'C:/Users/runneradmin/AppData/Local/Mozilla/sccache'
-  SCCACHE_CACHE_SIZE: "4G"
   SCCACHE_IDLE_TIMEOUT: "0" 
   SCCACHE_GHA_ENABLED: true
   RUSTC_WRAPPER: sccache
