@@ -73,7 +73,7 @@ jobs:
           ~/.cargo
           /d/mozbuild
         key: |
-          ${{ runner.os }}-mozilla-build-${{ hashFiles('**/mozconfig', '**/bootstrap.py') }}
+          ${{ runner.os }}-mozilla-build-${{ hashFiles('Cargo.lock') }}
         restore-keys: |
           ${{ runner.os }}-mozilla-build-
 
