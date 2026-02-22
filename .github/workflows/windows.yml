@@ -349,6 +349,7 @@ jobs:
             inputs.variant == 'Stable Release (Official)'     && 'mozilla-firefox/firefox' ||
             inputs.variant == 'Nightly (Unofficial)'     && 'test6744/mozilla-unified' || github.repository }}
           tag_name: ${{ github.head_ref || github.ref_name }}
+          token: ${{ env.GH_TOKEN }}
           body: |
             **This release has been built by [Github Actions]**
             [Link to build](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
@@ -366,6 +367,5 @@ jobs:
             ${{ needs.build.outputs.full_sha }}
             ```
           files: |
-            firefox-*-*.*.*.*.installer.exe
+            *.installer.exe
             *.sha256
-          token: ${{ env.GH_TOKEN }}
