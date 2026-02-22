@@ -182,6 +182,12 @@ jobs:
         ac_add_options --with-branding=browser/branding/enterprise
         ac_add_options --enable-release
         ac_add_options --enable-optimize
+        ac_add_options --disable-maintenance-service
+        ac_add_options --disable-crashreporter
+        ac_add_options --disable-datareporting
+        ac_add_options --disable-backgroundtasks
+        ac_add_options --disable-bitsdownload
+        ac_add_options --disable-spidermonkey-telemetry
         ac_add_options --disable-debug-symbols
         ac_add_options --disable-tests
         ac_add_options --disable-debug
