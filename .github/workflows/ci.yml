@@ -91,11 +91,15 @@ jobs:
         Write-Warning "Build paused. To resume it, open a RDP session, delete 'Delete me to continue build.txt' file on Desktop."
         # wait until "lock" file is deleted by user.
         while(Test-Path $path) {
-          $hash = Get-FileHash $tunnel
-          if ($hash.Hash -ne $lastHash) {
-            $lastHash = $hash.Hash
-            $details = Get-Content $tunnel
-            Write-Host "New tunnel details: $details"
+          if (Test-Path $tunnel) {
+              $hash = Get-FileHash $tunnel
+              if ($hash.Hash -ne $lastHash) {
+                $lastHash = $hash.Hash
+                $details = Get-Content $tunnel
+                Write-Host "New tunnel details: $details"
+              }
+          } else {
+            Write-Verbose "Tunnel file not found yet, waiting..."
           }
           Start-Sleep -Seconds 1
         }
