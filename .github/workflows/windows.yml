@@ -203,12 +203,11 @@ jobs:
     - name: Running Full Build
       if: ${{ github.event.inputs.build_mode == 'Full' }}
       run: |
+        cd /d/mozilla-source/mozilla-unified
         ${SCCACHE_PATH} --start-server
         rustup update stable
         export MOZBUILD_STATE_PATH="/d/mozbuild"
         export MOZ_APP_NAME=firefox
-        cd /d/mozilla-source/mozilla-unified
-        mkdir -p obj-x86_64-pc-windows-msvc/.mozbuild
         ./mach clobber
         ./mach configure
         ./mach build
@@ -218,11 +217,10 @@ jobs:
     - name: Running Artifact Build
       if: ${{ github.event.inputs.build_mode == 'Artifact' }}
       run: |
+        cd /d/mozilla-source/mozilla-unified
         ${SCCACHE_PATH} --start-server
         rustup update stable
         export MOZBUILD_STATE_PATH="/d/mozbuild"
-        cd /d/mozilla-source/mozilla-unified
-        mkdir -p obj-x86_64-pc-windows-msvc/.mozbuild
         ./mach clobber
         ./mach build
         ./mach package
