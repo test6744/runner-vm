@@ -200,24 +200,25 @@ jobs:
         EOF
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
       
-    - name: Build
+    - name: Running Full Build
       if: ${{ github.event.inputs.build_mode == 'Full' }}
       run: |
-        sccache --start-server
+        ${SCCACHE_PATH} --start-server
         rustup update stable
         export MOZBUILD_STATE_PATH="/d/mozbuild"
         export MOZ_APP_NAME=firefox
         cd /d/mozilla-source/mozilla-unified
         mkdir -p obj-x86_64-pc-windows-msvc/.mozbuild
         ./mach clobber
+        ./mach configure
         ./mach build
         ./mach package
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
 
-    - name: Build
+    - name: Running Artifact Build
       if: ${{ github.event.inputs.build_mode == 'Artifact' }}
       run: |
-        sccache --start-server
+        ${SCCACHE_PATH} --start-server
         rustup update stable
         export MOZBUILD_STATE_PATH="/d/mozbuild"
         cd /d/mozilla-source/mozilla-unified
@@ -264,8 +265,7 @@ jobs:
       run: |
         cd /d/mozilla-source/mozilla-unified
         ls -alh
-        sccache --stop-server
-        sccache --show-stats
+        ${SCCACHE_PATH} --show-stats
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
 
     - name: Upload a Build Artifact
