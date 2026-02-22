@@ -32,7 +32,6 @@ on:
         options:
         - Enterprise Release (Official)
         - Stable Release (Official)
-        - Nightly (Unofficial)
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -53,9 +52,8 @@ jobs:
       with:
         repository: >-
           ${{ 
-            inputs.variant == 'Enterprise Release (Official)' && 'mozilla/enterprise-firefox' ||
-            inputs.variant == 'Stable Release (Official)'     && 'mozilla-firefox/firefox' ||
-            inputs.variant == 'Nightly (Unofficial)'     && 'test6744/mozilla-unified'
+            inputs.variant == 'Enterprise Release (Official)' && 'test6744/enterprise-firefox' ||
+            inputs.variant == 'Stable Release (Official)'     && 'test6744/mozilla-unified' 
           }}
         persist-credentials: false
         fetch-depth: 1
@@ -341,14 +339,40 @@ jobs:
           echo "File count: $(wc -l < filelist.sha256)"
 
       - name: Upload Firefox to GitHub Release
+        if: ${{ github.event.inputs.variant == 'Enterprise Release (Official)' }}
         uses: softprops/action-gh-release@v2.5.0
         with:
           name: ${{ inputs.variant }} v${{ needs.check_date.outputs.var_build_num }}-${{ github.run_number }} [${{ needs.build.outputs.short_sha }}]
-          repository: ${{ 
-            inputs.variant == 'Enterprise Release (Official)' && 'mozilla/enterprise-firefox' ||
-            inputs.variant == 'Stable Release (Official)'     && 'mozilla-firefox/firefox' ||
-            inputs.variant == 'Nightly (Unofficial)'     && 'test6744/mozilla-unified' || github.repository }}
-          tag_name: ${{ github.head_ref || github.ref_name }}
+          repository: 'test6744/enterprise-firefox'
+          tag_name: ${{ github.head_ref }}
+          token: ${{ env.GH_TOKEN }}
+          body: |
+            **This release has been built by [Github Actions]**
+            [Link to build](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            
+            Build SHA256:
+            ```
+            ${{ steps.build_sha.outputs.build_sha }}
+            ```
+            To verify the build SHA256 during the action, click the build link, go-to "Create Release", open the Echo build sha256 step and read the sha256.
+
+            These are nightly/experimental builds of Mozilla Firefox (Enterprise Edition) and may be unstable; Use at your OWN risk :warning:.
+
+            Full Commit Hash:
+            ```
+            ${{ needs.build.outputs.full_sha }}
+            ```
+          files: |
+            *.installer.exe
+            *.sha256
+
+      - name: Upload Firefox to GitHub Release
+        if: ${{ github.event.inputs.variant == 'Stable Release (Official)' }}
+        uses: softprops/action-gh-release@v2.5.0
+        with:
+          name: ${{ inputs.variant }} v${{ needs.check_date.outputs.var_build_num }}-${{ github.run_number }} [${{ needs.build.outputs.short_sha }}]
+          repository: 'test6744/mozilla-unified'
+          tag_name: ${{ github.head_ref }}
           token: ${{ env.GH_TOKEN }}
           body: |
             **This release has been built by [Github Actions]**
