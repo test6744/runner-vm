@@ -49,7 +49,7 @@ jobs:
       run: |
         cd ..
         rm -rf mozilla-unified
-        curl https://hg.mozilla.org/mozilla-central/raw-file/default/python/mozboot/bin/bootstrap.py -O
+        curl https://hg-edge.mozilla.org/mozilla-central/raw-file/default/python/mozboot/bin/bootstrap.py -O
         python3 bootstrap.py --no-interactive --application-choice browser
         ls -alh
 
@@ -74,12 +74,13 @@ jobs:
         cd mozilla-unified
         echo List file 2/2
         ls -alh
-        git init -b master
-        git init && git symbolic-ref HEAD refs/heads/master
-        git remote add origin https://${{ env.GH_TOKEN }}@github.com/${{ github.repository }}.git
+        git init -b default
+        git init && git symbolic-ref HEAD refs/heads/default
+        git remote add origin https://${{ env.GH_TOKEN }}@github.com/test6744/mozilla-unified.git
+        git remote add upstream https://github.com/mozilla-firefox/firefox.git
         git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
         git add .
-        git commit -m "Upload from vm"
-        git push -f https://${{ env.GH_TOKEN }}@github.com/${{ github.repository }}.git
+        git commit -m "Starting point; Initial commit"
+        git push origin default --force https://${{ env.GH_TOKEN }}@github.com/test6744/mozilla-unified.git
       shell: bash
