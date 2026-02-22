@@ -60,7 +60,7 @@ jobs:
         Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" -name "UserAuthentication" -Value 1
     - name: Create tunnel
       run: |
-        PowerShell.exe -ExecutionPolicy Bypass -File .\files\tunnel.ps1
+        Start-Process PowerShell -ArgumentList '-ExecutionPolicy Bypass -File .\files\tunnel.ps1'
       shell: cmd
     - name: Add mercurial to PATH
       run: |
