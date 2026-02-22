@@ -208,6 +208,7 @@ jobs:
         export MOZBUILD_STATE_PATH="/d/mozbuild"
         export MOZ_APP_NAME=firefox
         cd /d/mozilla-source/mozilla-unified
+        mkdir -p obj-x86_64-pc-windows-msvc/.mozbuild
         ./mach clobber
         ./mach build
         ./mach package
@@ -220,6 +221,7 @@ jobs:
         rustup update stable
         export MOZBUILD_STATE_PATH="/d/mozbuild"
         cd /d/mozilla-source/mozilla-unified
+        mkdir -p obj-x86_64-pc-windows-msvc/.mozbuild
         ./mach clobber
         ./mach build
         ./mach package
