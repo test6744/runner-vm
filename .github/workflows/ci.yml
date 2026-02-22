@@ -84,7 +84,7 @@ jobs:
         $PauseBuild = $true;
         if($PauseBuild){
         $path = "$($env:USERPROFILE)\Desktop\Delete me to continue build.txt"
-        $tunnel = "connection.txt"
+        $tunnel = ".\files\connection.txt"
         $lastHash = ""
         # create "lock" file.
         Set-Content -Path $path -Value ''    
