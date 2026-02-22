@@ -60,8 +60,8 @@ jobs:
         Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" -name "UserAuthentication" -Value 1
     - name: Create tunnel
       run: |
-        Start-Process PowerShell -ArgumentList '-ExecutionPolicy Bypass -File .\files\tunnel.ps1'
-      shell: powershell
+        cmd /c files\tunnel.bat
+      shell: cmd
     - name: Add mercurial to PATH
       run: |
         python -m pip uninstall mercurial -y || true
