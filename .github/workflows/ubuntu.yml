@@ -48,6 +48,7 @@ jobs:
 
     - name: Commit
       run: |
+        cd ..
         cd mozilla-unified
         git reset --hard HEAD
         cd ..
