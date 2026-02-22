@@ -7,9 +7,8 @@ if (-not (Test-Path $exe)) {
 # Loop forever
 while ($true) {
     # Run Pinggy and capture output to connection.txt
-    & .\pinggy-win-x64.exe -p 443 -R0:127.0.0.1:3389 -o StrictHostKeyChecking=no -o ServerAliveInterval=30 tcp@ap.free.pinggy.io | Out-File -FilePath connection.txt -Encoding utf8
+    & .\pinggy-win-x64.exe -p 443 -R0:127.0.0.1:3389 tcp@ap.free.pinggy.io | Select-String "tcp://" | Tee-Object -FilePath connection.txt
 
     # Wait 10 seconds before restarting
     Start-Sleep -Seconds 10
 }
-
