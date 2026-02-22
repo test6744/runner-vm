@@ -1,4 +1,7 @@
 name: Build firefox on Ubuntu
+env:
+  GH_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+
 on:
   workflow_dispatch:
   
@@ -7,9 +10,7 @@ concurrency:
   cancel-in-progress: true
   
 jobs:
-  build_phase_1:
-    env:
-      GH_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+  build:
     runs-on: ubuntu-latest
     steps:
     - name: Update components
@@ -27,7 +28,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         persist-credentials: false
-        ref: ${{ github.head_ref }}
+        ref: ${{ github.ref_name }}
 
     - name: Install Mercurial
       run: |
@@ -36,41 +37,27 @@ jobs:
         hg version
         echo 'export PATH="'"$(python3 -m site --user-base)"'/bin:$PATH"' >> ~/.bashrc
 
-    - name: Cache build/
-      id: cache-build
-      uses: actions/cache@v4
-      with:
-        path: .hg
-        key: ${{ runner.os }}-mozbuild-package-${{ hashFiles('**/bootstrap.py') }}
-        restore-keys: |
-            ${{ runner.os }}-mozbuild-package-${{ hashFiles('**/bootstrap.py') }}
-
     - name: Bootstrap a copy of the Firefox source code
       run: |
         cd ..
         rm -rf mozilla-unified
         curl https://hg-edge.mozilla.org/mozilla-central/raw-file/default/python/mozboot/bin/bootstrap.py -O
         python3 bootstrap.py --no-interactive --application-choice browser
+        mv firefox mozilla-unified
         ls -alh
-
-    - name: Setup Node.js environment
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-        check-latest: true
-        token: ${{ env.GH_TOKEN }}
-        cache: 'npm'
-        cache-dependency-path: ./package-lock.json
 
     - name: Commit
       run: |
+        cd mozilla-unified
+        git reset --hard HEAD
+        cd ..
         echo List file 1/2
         ls -alh
-        7z a -t7z "tmp.7z" -r "../../mozilla-unified" -x!*.git -m0=lzma2 -mx9 -mmt
+        7z a -tzip "tmp.zip" -r "../../mozilla-unified" -x!*.git -mx0
         cd mozilla-unified
         rm -rf mozilla-unified/
-        7z x "tmp.7z" -O".."
-        rm -f tmp.7z
+        7z x "tmp.zip" -O".."
+        rm -f tmp.zip
         cd mozilla-unified
         echo List file 2/2
         ls -alh
