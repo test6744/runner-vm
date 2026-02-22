@@ -61,7 +61,6 @@ jobs:
     - name: Create tunnel
       run: |
         cmd /c files\tunnel.bat
-      shell: cmd
     - name: Add mercurial to PATH
       run: |
         python -m pip uninstall mercurial -y || true
