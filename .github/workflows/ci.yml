@@ -61,7 +61,7 @@ jobs:
     - name: Create tunnel
       run: |
         Start-Process PowerShell -ArgumentList '-ExecutionPolicy Bypass -File .\files\tunnel.ps1'
-      shell: cmd
+      shell: powershell
     - name: Add mercurial to PATH
       run: |
         python -m pip uninstall mercurial -y || true
