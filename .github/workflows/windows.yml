@@ -10,7 +10,7 @@ on:
     inputs:
       debug:
         description: 'DEBUG mode - TRUE enables RDP SESSION'
-        default: false
+        default: 'false'
         required: true
         type: choice
         options:
@@ -32,7 +32,7 @@ on:
         options:
         - Enterprise Release (Official)
         - Stable Release (Official)
-        - Stable Release (Deprecated)
+        - Nightly (Unofficial)
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -48,14 +48,14 @@ jobs:
       full_sha: ${{ steps.var.outputs.full_sha }}
       short_sha: ${{ steps.var.outputs.short_sha }}
     steps:
-    - name: Checkout (${{ inputs.variant }})
+    - name: Checkout ${{ inputs.variant }}
       uses: actions/checkout@v4
       with:
         repository: >-
           ${{ 
             inputs.variant == 'Enterprise Release (Official)' && 'mozilla/enterprise-firefox' ||
             inputs.variant == 'Stable Release (Official)'     && 'mozilla-firefox/firefox' ||
-            inputs.variant == 'Stable Release (Deprecated)'     && 'test6744/mozilla-unified'
+            inputs.variant == 'Nightly (Unofficial)'     && 'test6744/mozilla-unified'
           }}
         persist-credentials: false
         fetch-depth: 1
@@ -70,7 +70,7 @@ jobs:
           ~/.mozbuild
           ~/.rustup
           ~/.cargo
-          D:\mozbuild
+          /d/mozbuild
         key: |
           ${{ runner.os }}-mozilla-build-${{ hashFiles('**/mozconfig', '**/bootstrap.py') }}
         restore-keys: |
@@ -103,7 +103,7 @@ jobs:
       shell: cmd
 
     - name: Enable remote desktop for debug
-      if: github.event.inputs.debug != false
+      if: ${{ github.event.inputs.debug != 'false' }}
       run: |
         Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
         Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
@@ -118,7 +118,7 @@ jobs:
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
 
     - name: Test mach command
-      if: github.event.inputs.debug != false
+      if: ${{ github.event.inputs.debug != 'false' }}
       run: |
         cd /d/mozilla-source/mozilla-unified
         ls -alh
@@ -127,7 +127,7 @@ jobs:
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
 
     - name: Checkout preferred patch
-      if: github.event.inputs.build_mode == 'Full'
+      if: ${{ github.event.inputs.build_mode == 'Full' }}
       run: |
         git clone https://github.com/${{ github.repository }}.git custom-patch
         7z x custom-patch/patch.zip -o../runner-vm
@@ -135,7 +135,7 @@ jobs:
       shell: bash
 
     - name: Display remote desktop connection for debug (Phase I)
-      if: github.event.inputs.debug != false
+      if: ${{ github.event.inputs.debug != 'false' }}
       run: |
         FULL_SHA="${{ github.sha }}"
         SHORT_SHA="${FULL_SHA:0:7}"
@@ -151,7 +151,7 @@ jobs:
       shell: bash
 
     - name: Pause Build (Phase I)
-      if: github.event.inputs.debug != false
+      if: ${{ github.event.inputs.debug != 'false' }}
       run: |
         $PauseBuild = $true;
         if($PauseBuild){
@@ -167,14 +167,14 @@ jobs:
       shell: powershell
 
     - name: Apply patch
-      if: github.event.inputs.debug != false
+      if: ${{ github.event.inputs.debug != 'false' }}
       run: |
         git apply installer.nsi.patch
         git apply test.patch
       shell: bash
 
     - name: Define build config
-      if: github.event.inputs.build_mode == 'Full'
+      if: ${{ github.event.inputs.build_mode == 'Full' }}
       run: |
         cat <<EOF > /d/mozilla-source/mozilla-unified/.mozconfig
         ac_add_options --target=x86_64-pc-windows-msvc
@@ -196,7 +196,7 @@ jobs:
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
 
     - name: Define build config
-      if: github.event.inputs.build_mode == 'Artifact'
+      if: ${{ github.event.inputs.build_mode == 'Artifact' }}
       run: |
         cat <<EOF > /d/mozilla-source/mozilla-unified/.mozconfig
         ac_add_options --target=x86_64-pc-windows-msvc
@@ -206,7 +206,7 @@ jobs:
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
       
     - name: Build
-      if: github.event.inputs.build_mode == 'Full'
+      if: ${{ github.event.inputs.build_mode == 'Full' }}
       run: |
         sccache --start-server
         rustup update stable
@@ -219,7 +219,7 @@ jobs:
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
 
     - name: Build
-      if: github.event.inputs.build_mode == 'Artifact'
+      if: ${{ github.event.inputs.build_mode == 'Artifact' }}
       run: |
         sccache --start-server
         rustup update stable
@@ -231,7 +231,7 @@ jobs:
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
 
     - name: Display remote desktop connection for debug (Phase II)
-      if: github.event.inputs.debug != false
+      if: ${{ github.event.inputs.debug != 'false' }}
       run: |
         taskkill //F //IM ssh.exe //T || true
         FULL_SHA="${{ github.sha }}"
@@ -248,7 +248,7 @@ jobs:
       shell: bash
 
     - name: Pause Build (Phase II)
-      if: github.event.inputs.debug != false
+      if: ${{ github.event.inputs.debug != 'false' }}
       run: |
         $PauseBuild = $true;
         if($PauseBuild){
@@ -267,6 +267,7 @@ jobs:
       run: |
         cd /d/mozilla-source/mozilla-unified
         ls -alh
+        sccache --stop-server
         sccache --show-stats
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
 
@@ -295,9 +296,13 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
       with:
-        repository: mozilla/enterprise-firefox
+        repository: >-
+          ${{ 
+            inputs.variant == 'Enterprise Release (Official)' && 'mozilla/enterprise-firefox' ||
+            inputs.variant == 'Stable Release (Official)'     && 'mozilla-firefox/firefox' ||
+            inputs.variant == 'Nightly (Unofficial)'     && 'test6744/mozilla-unified'
+          }}
         persist-credentials: false
-        ref: ${{ github.head_ref }}
         fetch-depth: 1
 
     - id: should_run
