@@ -61,7 +61,6 @@ jobs:
     - name: Create tunnel
       run: |
         PowerShell.exe -ExecutionPolicy Bypass -File .\files\tunnel.ps1
-        .\files\tunnel.ps1
       shell: cmd
     - name: Add mercurial to PATH
       run: |
