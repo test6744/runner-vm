@@ -59,6 +59,7 @@ jobs:
           }}
         persist-credentials: false
         fetch-depth: 1
+        token: ${{ env.GH_TOKEN }}
 
     - name: Run sccache-cache
       uses: mozilla-actions/sccache-action@v0.0.9
@@ -129,7 +130,7 @@ jobs:
     - name: Checkout preferred patch
       if: ${{ github.event.inputs.build_mode == 'Full' }}
       run: |
-        git clone https://github.com/${{ github.repository }}.git custom-patch
+        git clone https://${{ env.GH_TOKEN }}@github.com/${{ github.repository }}.git custom-patch
         7z x custom-patch/patch.zip -o../runner-vm
         rm -rf custom-patch
       shell: bash
@@ -304,6 +305,7 @@ jobs:
           }}
         persist-credentials: false
         fetch-depth: 1
+        token: ${{ env.GH_TOKEN }}
 
     - id: should_run
       continue-on-error: true
@@ -332,9 +334,9 @@ jobs:
         id: build_sha
         run: |
           INSTALLER_FILE=$(ls *.installer.exe)
-          mkdir -p ./extracted_content
-          7z x "$INSTALLER_FILE" -o./extracted_content/
-          cd ./extracted_content
+          mkdir -p ./tmp
+          7z x "$INSTALLER_FILE" -o./tmp/
+          cd ./tmp
           find . -type f -exec sha256sum {} + > ../filelist.sha256
           cd ..
           sha256sum "$INSTALLER_FILE" > "$INSTALLER_FILE.sha256"
@@ -347,8 +349,12 @@ jobs:
       - name: Upload Firefox to GitHub Release
         uses: softprops/action-gh-release@v2.5.0
         with:
-          name: Nightly v${{ needs.check_date.outputs.var_build_num }}-${{ github.run_number }} [${{ needs.build.outputs.short_sha }}]
-          tag_name: nightly
+          name: ${{ inputs.variant }} v${{ needs.check_date.outputs.var_build_num }}-${{ github.run_number }} [${{ needs.build.outputs.short_sha }}]
+          repository: ${{ 
+            inputs.variant == 'Enterprise Release (Official)' && 'mozilla/enterprise-firefox' ||
+            inputs.variant == 'Stable Release (Official)'     && 'mozilla-firefox/firefox' ||
+            inputs.variant == 'Nightly (Unofficial)'     && 'test6744/mozilla-unified' || github.repository }}
+          tag_name: ${{ github.head_ref || github.ref_name }}
           body: |
             **This release has been built by [Github Actions]**
             [Link to build](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
