@@ -58,67 +58,45 @@ jobs:
         Enable-NetFirewallRule -DisplayName "Remote Desktop - User Mode (TCP-in)"
         netsh advfirewall firewall set rule group="Remote Desktop" new enable=yes
         Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" -name "UserAuthentication" -Value 1
+    - name: Create tunnel
+      run: |
+        cmd /c files\tunnel.bat
+      shell: cmd
     - name: Add mercurial to PATH
       run: |
         python -m pip uninstall mercurial -y || true
         python -m pip install mercurial --no-cache-dir --force-reinstall
         echo "$env:USERPROFILE\AppData\Roaming\Python\Python311\Scripts" >> $env:GITHUB_PATH
       shell: pwsh
-#    - name: Run Mercurial in WSL
-#      run: |
-#        wsl sudo apt-get update
-#        wsl sudo apt-get install -y mercurial
-#        wsl hg --version
-    - name: Display remote desktop connection for debug (Phase I)
+    - name: Display remote desktop connection for debug
       run: |
         FULL_SHA="${{ github.sha }}"
         SHORT_SHA="${FULL_SHA:0:7}"
         P2X="${SHORT_SHA}A1!"
         net user runneradmin "$P2X"
         echo "=========================================="
-        ssh -p 443 -L4300:localhost:4300 -R0:127.0.0.1:3389 -o StrictHostKeyChecking=no -o ServerAliveInterval=30 tcp@ap.free.pinggy.io &
-        sleep 10
-        echo "=========================================="
         echo "USER: runneradmin"
         echo "PASS: $P2X"
         echo "=========================================="
       shell: bash
-    - name: Pause Build (Phase I)
+    - name: Pause Build
       run: |
         $PauseBuild = $true;
         if($PauseBuild){
         $path = "$($env:USERPROFILE)\Desktop\Delete me to continue build.txt"
+        $tunnel = "connection.txt"
+        $lastHash = ""
         # create "lock" file.
         Set-Content -Path $path -Value ''    
         Write-Warning "Build paused. To resume it, open a RDP session, delete 'Delete me to continue build.txt' file on Desktop."
         # wait until "lock" file is deleted by user.
         while(Test-Path $path) {
-          Start-Sleep -Seconds 1
-        }
-        Write-Host "Build lock file has been deleted. Resuming build."}
-      shell: powershell
-    - name: Display remote desktop connection for debug (Phase II)
-      run: |
-        taskkill //F //IM ssh.exe //T || true
-        echo "=========================================="
-        ssh -p 443 -L4300:localhost:4300 -R0:127.0.0.1:3389 -o StrictHostKeyChecking=no -o ServerAliveInterval=30 tcp@ap.free.pinggy.io &
-        sleep 10
-        echo "=========================================="
-        echo "USER: runneradmin"
-        echo "PASS: $P2X"
-        echo "=========================================="
-      shell: bash
-    - name: Pause Build (Phase II)
-      if: github.event.inputs.debug != false
-      run: |
-        $PauseBuild = $true;
-        if($PauseBuild){
-        $path = "$($env:USERPROFILE)\Desktop\Delete me to continue build.txt"
-        # create "lock" file.
-        Set-Content -Path $path -Value ''    
-        Write-Warning "Build paused. To resume it, open a RDP session, delete 'Delete me to continue build.txt' file on Desktop."
-        # wait until "lock" file is deleted by user.
-        while(Test-Path $path) {
+          $hash = Get-FileHash $tunnel
+          if ($hash.Hash -ne $lastHash) {
+            $lastHash = $hash.Hash
+            $details = Get-Content $tunnel
+            Write-Host "New tunnel details: $details"
+          }
           Start-Sleep -Seconds 1
         }
         Write-Host "Build lock file has been deleted. Resuming build."}
