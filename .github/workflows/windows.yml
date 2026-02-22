@@ -55,7 +55,7 @@ jobs:
           ${{ 
             inputs.variant == 'Enterprise Release (Official)' && 'mozilla/enterprise-firefox' ||
             inputs.variant == 'Stable Release (Official)'     && 'mozilla-firefox/firefox' ||
-            inputs.variant == 'Stable Release (Deprecated)'     && 'mozilla/gecko-dev'
+            inputs.variant == 'Stable Release (Deprecated)'     && 'test6744/mozilla-unified'
           }}
         persist-credentials: false
         fetch-depth: 1
@@ -179,7 +179,7 @@ jobs:
         cat <<EOF > /d/mozilla-source/mozilla-unified/.mozconfig
         ac_add_options --target=x86_64-pc-windows-msvc
         ac_add_options --with-ccache=sccache
-        ac_add_options --with-branding=browser/branding/enterprise
+        ac_add_options --with-branding=browser/branding/official
         ac_add_options --enable-release
         ac_add_options --enable-optimize
         ac_add_options --disable-maintenance-service
@@ -200,6 +200,7 @@ jobs:
       run: |
         cat <<EOF > /d/mozilla-source/mozilla-unified/.mozconfig
         ac_add_options --target=x86_64-pc-windows-msvc
+        ac_add_options --disable-tests
         mk_add_options MOZ_OBJDIR=@TOPSRCDIR@/obj-x86_64-pc-windows-msvc
         EOF
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
@@ -210,7 +211,7 @@ jobs:
         sccache --start-server
         rustup update stable
         export MOZBUILD_STATE_PATH="/d/mozbuild"
-        export MOZ_APP_NAME=firefox-enterprise
+        export MOZ_APP_NAME=firefox
         cd /d/mozilla-source/mozilla-unified
         ./mach clobber
         ./mach build
