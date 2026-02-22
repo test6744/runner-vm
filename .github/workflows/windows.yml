@@ -204,6 +204,7 @@ jobs:
         cd /d/mozilla-source/mozilla-unified
         ${SCCACHE_PATH} --start-server
         rustup update stable
+        cargo install cbindgen
         export MOZBUILD_STATE_PATH="/d/mozbuild"
         export MOZ_APP_NAME=firefox
         ./mach clobber
