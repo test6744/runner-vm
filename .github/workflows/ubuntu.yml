@@ -21,7 +21,8 @@ jobs:
         sudo sed -i 's|http://azure.|http://|g' /etc/apt/sources.list
         sudo chmod 0644 /boot/vmlinuz*
         sudo chmod +r /boot/vmlinuz-*
-        sudo apt-get update && sudo apt-get install curl python3 python3-pip mercurial gcc-multilib g++-multilib libgtk-3-0 libasound2:i386 libgtk2.0-dev:i386 libgtk-3-dev:i386 libpango1.0-dev:i386 libxt-dev:i386 libx11-xcb-dev:i386 libpulse-dev:i386 libdrm-dev:i386
+        sudo apt-get update && sudo apt-get upgrade
+        sudo apt-get update && sudo apt-get install p7zip-full curl python3 python3-pip mercurial gcc-multilib g++-multilib libgtk-3-0 libasound2:i386 libgtk2.0-dev:i386 libgtk-3-dev:i386 libpango1.0-dev:i386 libxt-dev:i386 libx11-xcb-dev:i386 libpulse-dev:i386 libdrm-dev:i386
         source /etc/os-release
         
     - name: Checkout
@@ -52,12 +53,9 @@ jobs:
         cd mozilla-unified
         git reset --hard HEAD
         cd ..
-        echo List file 1/2
-        ls -alh
-        7z a -tzip "tmp.zip" -r "../../mozilla-unified" -x!*.git -mx0
-        cd mozilla-unified
+        7z a -tzip "tmp.zip" -r "mozilla-unified" -x!*.git -mx0
         rm -rf mozilla-unified/
-        7z x "tmp.zip" -O".."
+        7z x "tmp.zip"
         rm -f tmp.zip
         cd mozilla-unified
         echo List file 2/2
