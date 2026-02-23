@@ -90,15 +90,16 @@ jobs:
         /c/mozilla-build/python3/python3.exe -m pip uninstall mercurial -y
         /c/mozilla-build/python3/python3.exe -m pip install mercurial --no-cache-dir --force-reinstall
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
+      working-directory: D:\mozilla-source\mozilla-unified
 
     - name: Test mach command
       if: github.event.inputs.debug != 'false'
       run: |
-        cd /d/mozilla-source/mozilla-unified
         ls -alh
         hg version
         ./mach settings
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
+      working-directory: D:\mozilla-source\mozilla-unified
 
     - name: Checkout preferred patch
       run: |
@@ -148,6 +149,8 @@ jobs:
 
     - name: Setup sccache and toolchains
       run: |
+        git init
+        git reset --hard HEAD
         cargo install sccache --locked
         ./mach bootstrap --application-choice=browser
       shell: bash
@@ -169,7 +172,7 @@ jobs:
         ./mach build -j%NUMBER_OF_PROCESSORS%
         ./mach package
       shell: bash
-      working-directory: /d/mozilla-source/mozilla-unified
+      working-directory: D:\mozilla-source\mozilla-unified
 
     - name: Display remote desktop connection for debug
       if: github.event.inputs.debug != 'false'
@@ -208,7 +211,7 @@ jobs:
         ls -alh
         sccache --show-stats
       shell: bash
-      working-directory: /d/mozilla-source/mozilla-unified
+      working-directory: D:\mozilla-source\mozilla-unified
 
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v6
@@ -223,7 +226,7 @@ jobs:
         git init
         echo "full_sha=$(git rev-parse HEAD)" >> $env:GITHUB_OUTPUT
         echo "short_sha=$(git rev-parse --short HEAD)" >> $env:GITHUB_OUTPUT
-      working-directory: /d/mozilla-source/mozilla-unified
+      working-directory: D:\mozilla-source\mozilla-unified
 
   check_date:
     runs-on: ubuntu-latest
@@ -306,4 +309,5 @@ jobs:
           files: |
             *.installer.exe
             *.sha256
+
 
