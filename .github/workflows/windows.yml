@@ -123,6 +123,7 @@ jobs:
         ls -alh
         hg version
         ./mach settings
+        ./mach bootstrap --application-choice=browser
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
 
     - name: Checkout preferred patch
@@ -204,7 +205,6 @@ jobs:
         cd /d/mozilla-source/mozilla-unified
         ${SCCACHE_PATH} --start-server
         rustup update stable
-        cargo install cbindgen
         export MOZBUILD_STATE_PATH="/d/mozbuild"
         export MOZ_APP_NAME=firefox
         ./mach clobber
