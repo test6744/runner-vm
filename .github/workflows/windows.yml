@@ -122,6 +122,7 @@ jobs:
       run: |
         cd /d/mozilla-source/mozilla-unified
         ls -alh
+        which hg
         hg version
         ./mach settings
         ./mach bootstrap --application-choice=browser
