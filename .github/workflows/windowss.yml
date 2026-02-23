@@ -149,6 +149,7 @@ jobs:
     - name: Setup sccache and toolchains
       run: |
         cargo install sccache --locked
+        cd /d/mozilla-source/mozilla-unified
         ./mach bootstrap --application-choice=browser
       shell: bash
 
@@ -303,5 +304,6 @@ jobs:
           files: |
             *.installer.exe
             *.sha256
+
 
 
