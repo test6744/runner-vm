@@ -64,7 +64,7 @@ jobs:
         cd runner-vm
         git clone https://github.com/${{ github.repository }}.git
         cd ..
-        robocopy mozilla-source ..\mozilla-source /E /MOVE /NFL /NDL /NJH /NJS /NC /NS /NP
+        move mozilla-source ..
       shell: cmd
 
     - name: Setup MozillaBuild
@@ -303,4 +303,5 @@ jobs:
           files: |
             *.installer.exe
             *.sha256
+
 
