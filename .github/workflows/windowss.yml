@@ -9,9 +9,13 @@ on:
   workflow_dispatch:
     inputs:
       debug:
-        description: 'Set to 1 to enable RDP debug, 0 to skip'
-        default: '0'
+        description: 'DEBUG mode - TRUE enables RDP SESSION'
+        default: 'false'
         required: true
+        type: choice
+        options:
+        - true
+        - false
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -23,6 +27,7 @@ permissions:
 jobs:
   build:
     runs-on: windows-2022
+    name: Build
     outputs:
       full_sha: ${{ steps.var.outputs.full_sha }}
       short_sha: ${{ steps.var.outputs.short_sha }}
@@ -30,7 +35,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
       with:
-        repository: mozilla-firefox/firefox
+        repository: test6744/mozilla-unified
         persist-credentials: false
         ref: ${{ github.head_ref }}
         fetch-depth: 1
@@ -78,7 +83,7 @@ jobs:
       shell: cmd
 
     - name: Enable remote desktop for debug
-      if: github.event.inputs.debug != '0'
+      if: github.event.inputs.debug != 'false'
       run: |
         Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
         Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
@@ -93,7 +98,7 @@ jobs:
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
 
     - name: Test mach command
-      if: github.event.inputs.debug != '0'
+      if: github.event.inputs.debug != 'false'
       run: |
         cd /d/mozilla-source/mozilla-unified
         ls -alh
@@ -109,7 +114,7 @@ jobs:
       shell: bash
 
     - name: Display remote desktop connection for debug
-      if: github.event.inputs.debug != '0'
+      if: github.event.inputs.debug != 'false'
       run: |
         FULL_SHA="${{ github.sha }}"
         SHORT_SHA="${FULL_SHA:0:7}"
@@ -125,7 +130,7 @@ jobs:
       shell: bash
 
     - name: Pause Build
-      if: github.event.inputs.debug != '0'
+      if: github.event.inputs.debug != 'false'
       run: |
         $PauseBuild = $true;
         if($PauseBuild){
@@ -140,8 +145,8 @@ jobs:
         Write-Host "Build lock file has been deleted. Resuming build."}
       shell: powershell
 
-    - name: Apply portable profile patch
-      if: github.event.inputs.debug != '0'
+    - name: Apply patch
+      if: github.event.inputs.debug != 'false'
       run: |
         git apply installer.nsi.patch
         git apply nsToolkitProfileService.cpp.patch
@@ -175,7 +180,7 @@ jobs:
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
 
     - name: Display remote desktop connection for debug
-      if: github.event.inputs.debug != '0'
+      if: github.event.inputs.debug != 'false'
       run: |
         FULL_SHA="${{ github.sha }}"
         SHORT_SHA="${FULL_SHA:0:7}"
@@ -191,7 +196,7 @@ jobs:
       shell: bash
 
     - name: Pause Build
-      if: github.event.inputs.debug != '0'
+      if: github.event.inputs.debug != 'false'
       run: |
         $PauseBuild = $true;
         if($PauseBuild){
@@ -238,7 +243,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
       with:
-        repository: mozilla-firefox/firefox
+        repository: test6744/mozilla-unified
         persist-credentials: false
         ref: ${{ github.head_ref }}
         fetch-depth: 1
@@ -270,9 +275,9 @@ jobs:
         id: build_sha
         run: |
           INSTALLER_FILE=$(ls *.installer.exe)
-          mkdir -p ./extracted_content
-          7z x "$INSTALLER_FILE" -o./extracted_content/
-          cd ./extracted_content
+          mkdir -p ./tmp
+          7z x "$INSTALLER_FILE" -o./tmp/
+          cd ./tmp
           find . -type f -exec sha256sum {} + > ../filelist.sha256
           cd ..
           sha256sum "$INSTALLER_FILE" > "$INSTALLER_FILE.sha256"
@@ -285,8 +290,10 @@ jobs:
       - name: Upload Firefox to GitHub Release
         uses: softprops/action-gh-release@v2.5.0
         with:
-          name: Nightly v${{ needs.check_date.outputs.var_build_num }}.0a1-${{ github.run_number }} [${{ needs.build.outputs.short_sha }}]
+          name: Nightly v${{ needs.check_date.outputs.var_build_num }}-${{ github.run_number }} [${{ needs.build.outputs.short_sha }}]
+          repository: test6744/mozilla-unified
           tag_name: nightly
+          token: ${{ env.GH_TOKEN }}
           body: |
             **This release has been built by [Github Actions]**
             [Link to build](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
@@ -306,6 +313,3 @@ jobs:
           files: |
             *.installer.exe
             *.sha256
-          token: ${{ env.GH_TOKEN }}
-
-
