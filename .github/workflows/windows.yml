@@ -114,8 +114,7 @@ jobs:
       run: |
         /c/mozilla-build/python3/python3.exe -m pip uninstall mercurial -y
         /c/mozilla-build/python3/python3.exe -m pip install mercurial --no-cache-dir --force-reinstall
-        echo 'export PATH="'"$(python3 -m site --user-base)"'/bin:$PATH"' >> ~/.bashrc
-        source ~/.bashrc
+        echo 'export PATH="'"$(python3 -m site --user-base)"'/bin:$PATH"' >>  >> $GITHUB_PATH
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
 
     - name: Test mach command
