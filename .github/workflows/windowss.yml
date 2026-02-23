@@ -49,8 +49,10 @@ jobs:
       with:
         path: |
           ${{ env.SCCACHE_DIR }}
+          ~/.cargo/registry
+          ~/.cargo/git
         key: |
-          ${{ runner.os }}-sccache-${{ hashFiles('Cargo.lock') }}
+          ${{ runner.os }}-sccache-${{ hashFiles('**/Cargo.lock') }}
         restore-keys: |
           ${{ runner.os }}-sccache-
 
@@ -309,6 +311,7 @@ jobs:
           files: |
             *.installer.exe
             *.sha256
+
 
 
 
