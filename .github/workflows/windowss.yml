@@ -144,7 +144,7 @@ jobs:
     - name: Setup sccache
       run: |
         cargo install sccache --locked
-        ./mach bootstrap --no-interactive --application-choice=browser
+        ./mach bootstrap --application-choice=browser
       shell: bash
 
     - name: Configure .mozconfig
@@ -297,5 +297,6 @@ jobs:
           files: |
             *.installer.exe
             *.sha256
+
 
 
