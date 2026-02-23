@@ -89,8 +89,10 @@ jobs:
       run: |
         cd ../../../..
         mkdir mozilla-source
+        mkdir mozbuild
         mklink /J "D:\mozilla-source\mozilla-unified" "D:\a\runner-vm\runner-vm"
         mklink /J "D:\mozilla-source\firefox" "D:\a\runner-vm\runner-vm"
+        mklink /J "D:\mozbuild" "C:\Users\runneradmin\.mozbuild"
       shell: cmd
 
     - name: Setup MozillaBuild
