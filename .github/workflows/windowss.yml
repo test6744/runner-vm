@@ -54,7 +54,7 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-sccache-
 
-    - name: Link checkout
+    - name: Move checkout
       run: |
         cd ..
         ren runner-vm mozilla-unified
@@ -64,7 +64,7 @@ jobs:
         cd runner-vm
         git clone https://github.com/${{ github.repository }}.git
         cd ..
-        robocopy mozilla-source ..\mozilla-source /E /MOVE
+        robocopy mozilla-source ..\mozilla-source /E /MOVE /NFL /NDL /NJH /NJS /NC /NS /NP
       shell: cmd
 
     - name: Setup MozillaBuild
@@ -303,3 +303,4 @@ jobs:
           files: |
             *.installer.exe
             *.sha256
+
