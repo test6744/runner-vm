@@ -238,7 +238,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
       with:
-        repository: mozilla/enterprise-firefox
+        repository: mozilla-firefox/firefox
         persist-credentials: false
         ref: ${{ github.head_ref }}
         fetch-depth: 1
@@ -297,7 +297,7 @@ jobs:
             ```
             To verify the build SHA256 during the action, click the build link, go-to "Create Release", open the Echo build sha256 step and read the sha256.
 
-            These are nightly/experimental builds of Mozilla Firefox (Enterprise Edition) and may be unstable; Use at your OWN risk :warning:.
+            These are nightly/experimental builds of Mozilla Firefox and may be unstable; Use at your OWN risk :warning:.
 
             Full Commit Hash:
             ```
@@ -307,4 +307,5 @@ jobs:
             *.installer.exe
             *.sha256
           token: ${{ env.GH_TOKEN }}
+
 
