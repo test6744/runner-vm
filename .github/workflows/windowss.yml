@@ -169,7 +169,7 @@ jobs:
       
     - name: Build
       run: |
-        ./mach build -j%NUMBER_OF_PROCESSORS%
+        ./mach build -j$NUMBER_OF_PROCESSORS
         ./mach package
       shell: bash
       working-directory: D:\mozilla-source\mozilla-unified
@@ -309,5 +309,6 @@ jobs:
           files: |
             *.installer.exe
             *.sha256
+
 
 
