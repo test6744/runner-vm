@@ -1,10 +1,11 @@
 name: Build on Windows
 env:
   GH_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-  SCCACHE_DIR: 'C:/Users/runneradmin/AppData/Local/Mozilla/sccache'
+  SCCACHE_DIR: 'D:/.cache/sccache'
   SCCACHE_IDLE_TIMEOUT: "0" 
   SCCACHE_GHA_ENABLED: true
   RUSTC_WRAPPER: sccache
+  MOZBUILD_STATE_PATH: 'D:/mozbuild'
 on:
   workflow_dispatch:
     inputs:
@@ -40,23 +41,10 @@ jobs:
         ref: ${{ github.head_ref }}
         fetch-depth: 1
 
-    - name: Run sccache-cache
+    - name: Run sccache
       uses: mozilla-actions/sccache-action@v0.0.9
           
-    - name: Cache build state
-      uses: actions/cache@v5
-      with:
-        path: |
-          ~/.mozbuild
-          ~/.rustup
-          ~/.cargo
-          D:\mozbuild
-        key: |
-          ${{ runner.os }}-mozilla-build-${{ hashFiles('**/mozconfig', '**/bootstrap.py') }}
-        restore-keys: |
-          ${{ runner.os }}-mozilla-build-
-
-    - name: Cache Sccache
+    - name: Cache sccache
       uses: actions/cache@v5
       with:
         path: |
@@ -75,6 +63,7 @@ jobs:
       shell: cmd
 
     - name: Setup MozillaBuild
+      if: github.event.inputs.debug != 'false'
       run: |
         aria2c https://ftp.mozilla.org/pub/mozilla/libraries/win32/MozillaBuildSetup-Latest.exe
         start /W MozillaBuildSetup-Latest.exe /S
@@ -92,6 +81,7 @@ jobs:
         Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -name "UserAuthentication" -Value 1
       
     - name: Add mercurial to PATH
+      if: github.event.inputs.debug != 'false'
       run: |
         /c/mozilla-build/python3/python3.exe -m pip uninstall mercurial -y
         /c/mozilla-build/python3/python3.exe -m pip install mercurial --no-cache-dir --force-reinstall
@@ -152,32 +142,27 @@ jobs:
         git apply nsToolkitProfileService.cpp.patch
       shell: bash
 
-    - name: Define build config
+    - name: Setup sccache
       run: |
-        cat <<EOF > /d/mozilla-source/mozilla-unified/.mozconfig
-        ac_add_options --target=x86_64-pc-windows-msvc
-        ac_add_options --with-ccache=sccache
-        ac_add_options --with-branding=browser/branding/official
-        ac_add_options --enable-release
-        ac_add_options --enable-optimize
-        ac_add_options --disable-debug-symbols
-        ac_add_options --disable-tests
-        ac_add_options --disable-debug
-        mk_add_options MOZ_OBJDIR=@TOPSRCDIR@/obj-x86_64-pc-windows-msvc
-        EOF
-      shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
+        cargo install sccache --locked
+        ./mach bootstrap --no-interactive --application-choice=browser
+      shell: bash
+
+    - name: Configure .mozconfig
+      run: |
+        echo 'mk_add_options MOZ_OBJDIR=D:/objdir' >> .mozconfig
+        echo 'ac_add_options --enable-release' >> .mozconfig
+        echo 'ac_add_options --with-ccache=sccache' >> .mozconfig
+        echo 'ac_add_options --disable-tests' >> .mozconfig
+        echo 'ac_add_options --disable-debug' >> .mozconfig
+        echo 'ac_add_options --disable-crashreporter' >> .mozconfig
+        echo 'ac_add_options --disable-updater' >> .mozconfig
       
     - name: Build
       run: |
-        sccache --start-server
-        rustup update stable
-        export MOZBUILD_STATE_PATH="/d/mozbuild"
-        export MOZ_APP_NAME=firefox
         cd /d/mozilla-source/mozilla-unified
-        ./mach clobber
-        ./mach build
+        ./mach build -j%NUMBER_OF_PROCESSORS%
         ./mach package
-      shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
 
     - name: Display remote desktop connection for debug
       if: github.event.inputs.debug != 'false'
@@ -216,14 +201,14 @@ jobs:
         cd /d/mozilla-source/mozilla-unified
         ls -alh
         sccache --show-stats
-      shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
+      shell: bash
 
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v6
       with:
         name: installer
         path: |
-          obj-x86_64-pc-windows-msvc/dist/*.installer.exe
+          objdir/dist/install/sea/*.exe
 
     - id: var
       name: Generate Build Info
@@ -280,7 +265,7 @@ jobs:
           cd ./tmp
           find . -type f -exec sha256sum {} + > ../filelist.sha256
           cd ..
-          sha256sum "$INSTALLER_FILE" > "$INSTALLER_FILE.sha256"
+          sha256sum "$INSTALLER_FILE" > "$INSTALLER_FILE.sha256" >> $GITHUB_OUTPUT
           HASH_ONLY=$(sha256sum "$INSTALLER_FILE" | cut -d ' ' -f 1)
           cat filelist.sha256
           echo "Main Installer Hash:"
@@ -290,9 +275,9 @@ jobs:
       - name: Upload Firefox to GitHub Release
         uses: softprops/action-gh-release@v2.5.0
         with:
-          name: Nightly v${{ needs.check_date.outputs.var_build_num }}-${{ github.run_number }} [${{ needs.build.outputs.short_sha }}]
+          name: Release Nightly v${{ needs.check_date.outputs.var_build_num }}-${{ github.run_number }} [${{ needs.build.outputs.short_sha }}]
           repository: test6744/mozilla-unified
-          tag_name: nightly
+          tag_name: release
           token: ${{ env.GH_TOKEN }}
           body: |
             **This release has been built by [Github Actions]**
@@ -313,3 +298,4 @@ jobs:
           files: |
             *.installer.exe
             *.sha256
+
