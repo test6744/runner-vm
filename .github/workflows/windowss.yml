@@ -151,7 +151,7 @@ jobs:
         cargo install sccache --locked
         ./mach bootstrap --application-choice=browser
       shell: bash
-      working-directory: /d/mozilla-source/mozilla-unified
+      working-directory: D:\mozilla-source\mozilla-unified
 
     - name: Configure .mozconfig
       run: |
@@ -306,3 +306,4 @@ jobs:
           files: |
             *.installer.exe
             *.sha256
+
