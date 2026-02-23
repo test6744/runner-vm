@@ -63,7 +63,6 @@ jobs:
       shell: cmd
 
     - name: Setup MozillaBuild
-      if: github.event.inputs.debug != 'false'
       run: |
         aria2c https://ftp.mozilla.org/pub/mozilla/libraries/win32/MozillaBuildSetup-Latest.exe
         start /W MozillaBuildSetup-Latest.exe /S
@@ -298,4 +297,5 @@ jobs:
           files: |
             *.installer.exe
             *.sha256
+
 
