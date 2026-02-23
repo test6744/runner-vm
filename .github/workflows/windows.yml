@@ -117,7 +117,6 @@ jobs:
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
 
     - name: Test mach command
-      if: ${{ github.event.inputs.debug != 'false' }}
       run: |
         cd /d/mozilla-source/mozilla-unified
         ls -alh
