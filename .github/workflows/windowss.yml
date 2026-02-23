@@ -149,9 +149,9 @@ jobs:
     - name: Setup sccache and toolchains
       run: |
         cargo install sccache --locked
-        cd /d/mozilla-source/mozilla-unified
         ./mach bootstrap --application-choice=browser
       shell: bash
+      working-directory: /d/mozilla-source/mozilla-unified
 
     - name: Configure .mozconfig
       run: |
@@ -162,13 +162,14 @@ jobs:
         echo 'ac_add_options --disable-debug' >> .mozconfig
         echo 'ac_add_options --disable-crashreporter' >> .mozconfig
         echo 'ac_add_options --disable-updater' >> .mozconfig
+      working-directory: D:\mozilla-source\mozilla-unified
       
     - name: Build
       run: |
-        cd /d/mozilla-source/mozilla-unified
         ./mach build -j%NUMBER_OF_PROCESSORS%
         ./mach package
       shell: bash
+      working-directory: /d/mozilla-source/mozilla-unified
 
     - name: Display remote desktop connection for debug
       if: github.event.inputs.debug != 'false'
@@ -204,10 +205,10 @@ jobs:
       
     - name: List files
       run: |
-        cd /d/mozilla-source/mozilla-unified
         ls -alh
         sccache --show-stats
       shell: bash
+      working-directory: /d/mozilla-source/mozilla-unified
 
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v6
@@ -222,6 +223,7 @@ jobs:
         git init
         echo "full_sha=$(git rev-parse HEAD)" >> $env:GITHUB_OUTPUT
         echo "short_sha=$(git rev-parse --short HEAD)" >> $env:GITHUB_OUTPUT
+      working-directory: /d/mozilla-source/mozilla-unified
 
   check_date:
     runs-on: ubuntu-latest
@@ -304,6 +306,3 @@ jobs:
           files: |
             *.installer.exe
             *.sha256
-
-
-
