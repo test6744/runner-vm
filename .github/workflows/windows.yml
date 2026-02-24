@@ -156,7 +156,6 @@ jobs:
       run: |
         git init
         git reset --hard HEAD
-        ${SCCACHE_PATH} --show-stats
         ./mach bootstrap --application-choice=browser
       shell: bash
       working-directory: D:\mozilla-source\mozilla-unified
@@ -309,6 +308,7 @@ jobs:
           files: |
             *.installer.exe
             *.sha256
+
 
 
 
