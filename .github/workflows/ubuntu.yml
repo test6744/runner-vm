@@ -2,6 +2,7 @@ name: Build on Ubuntu
 env:
   GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }}
   CARGO_TERM_COLOR: always
+  MOZBOOT_NO_CLONE: 1
 
 on:
   workflow_dispatch:
@@ -16,6 +17,7 @@ jobs:
     name: Build
     steps:
     - name: Update components
+      shell: bash
       run: |
         sudo timedatectl set-timezone Asia/Manila
         sudo sed -i 's|http://azure.|http://|g' /etc/apt/apt-mirrors.txt
@@ -34,20 +36,58 @@ jobs:
         fetch-depth: 1
 
     - name: Install Mercurial
+      shell: bash
       run: |
         python -m pip install --upgrade pip
         pip install --upgrade mercurial
         python3 -m pip install mercurial --no-cache-dir --force-reinstall
-        hg version
         echo 'export PATH="'"$(python3 -m site --user-base)"'/bin:$PATH"' >> $GITHUB_PATH
+        hg version
 
     - name: Clone repository
+      shell: bash
       run: |
         hg clone --stream https://hg.mozilla.org/mozilla-unified ../mozilla-unified
         ls -alh
         cd ../mozilla-unified
         ls -alh
 
+    - name: Run sccache-cache
+      uses: mozilla-actions/sccache-action@v0.0.6
+      with:
+        version: "v0.7.1"
+        
+    - name: Build
+      env:
+        SCCACHE_GHA_ENABLED: "true"
+        RUSTC_WRAPPER: "sccache"
+      shell: bash
+      run: |
+        cd ../mozilla-unified
+        hg pull && hg update
+        ./mach bootstrap --application-choice=browser --no-interactive
+        echo "mk_add_options MOZ_OBJDIR=@TOPSRCDIR@/obj-x86_64-pc-mingw32" > .mozconfig
+        echo "ac_add_options --with-ccache=sccache" >> .mozconfig
+        echo "ac_add_options --target=x86_64-pc-mingw32" >> ./.mozconfig
+        echo "ac_add_options --with-branding=browser/branding/official" >> .mozconfig
+        echo "ac_add_options --enable-release" >> .mozconfig
+        echo "ac_add_options --enable-optimize" >> .mozconfig
+        echo "ac_add_options --disable-debug-symbols" >> .mozconfig
+        echo "ac_add_options --disable-tests" >> .mozconfig
+        echo "ac_add_options --disable-debug" >> .mozconfig
+        echo "ac_add_options --disable-updater" >> .mozconfig
+        echo "ac_add_options --disable-crashreporter" >> .mozconfig
+        export MOZCONFIG=@TOPSRCDIR@/.mozconfig
+        ./mach build
+        ./mach package
+
+    - name: Upload a Build Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: installer
+        path: |
+          **/obj-x86_64-pc-mingw32/dist/*.installer.exe
+        
 #    - name: Bootstrap a copy of the Firefox source code
 #      run: |
 #        cd ..
