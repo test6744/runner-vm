@@ -240,36 +240,45 @@ jobs:
     name: Check latest commit
     needs: build
     outputs:
-      should_run: ${{ steps.should_run.outputs.should_run }}
-      var_build_num: ${{ steps.var_build_num.outputs.var_build_num }}
+      should_run: ${{ steps.date_check.outputs.should_run }}
+      var_build_num: ${{ steps.date_check.outputs.var_build_num }}
     steps:
     - name: Checkout
       uses: actions/checkout@v4
       with:
         repository: test6744/mozilla-unified
-        persist-credentials: false
-        ref: ${{ github.head_ref }}
         fetch-depth: 1
 
-    - id: should_run
+    - id: date_check
       continue-on-error: true
-      name: Check if latest commit date is within the previous 24 hours
+      name: Check Date and Version
+      shell: bash
       run: |
-        test -z $(git rev-list  --after="24 hours"  ${{ github.sha }}) && echo "should_run=false" >> $GITHUB_OUTPUT
+        RECENT_COMMIT=$(git rev-list -1 --after="24 hours" HEAD)
+        if [ -n "$RECENT_COMMIT" ]; then
+          echo "should_run=true" >> $GITHUB_OUTPUT
+          echo "Recent changes found."
+        else
+          echo "should_run=false" >> $GITHUB_OUTPUT
+          echo "No changes in last 24h."
+        fi
 
-    - id: var_build_num
-      continue-on-error: true
-      name: Read Build Number
-      run: |
-        echo "var_build_num=$(cat browser/config/version_display.txt)" >> $GITHUB_OUTPUT
-        cat browser/config/version_display.txt
+        VERSION=$(cat browser/config/version_display.txt)
+        echo "var_build_num=$VERSION" >> $GITHUB_OUTPUT
+        echo "Version detected: $VERSION"
 
   create_release:
     runs-on: ubuntu-latest
     name: Create Release
     needs: [ build, check_date ]
+    if: needs.build.result == 'success' && (needs.check_date.outputs.should_run == 'true' || github.event_name == 'workflow_dispatch')
     steps:
-      - name: Download Artifact
+      - name: Install Tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y p7zip-full
+  
+      - name: Download a Build Artifact
         uses: actions/download-artifact@v7
         with:
           name: installer
@@ -277,25 +286,22 @@ jobs:
       - name: Echo build sha256
         id: build_sha
         run: |
-          INSTALLER_FILE=$(ls *.installer.exe)
-          mkdir -p ./tmp
-          7z x "$INSTALLER_FILE" -o./tmp/
-          cd ./tmp
-          find . -type f -exec sha256sum {} + > ../filelist.sha256
-          cd ..
-          sha256sum "$INSTALLER_FILE" > "$INSTALLER_FILE.sha256" >> $GITHUB_OUTPUT
+          INSTALLER_FILE=$(ls *.installer.exe | head -n 1)
+          if [ -z "$INSTALLER_FILE" ]; then echo "No installer found!"; exit 1; fi
+          7z x "$INSTALLER_FILE" -o"tmp" -y > /dev/null
+          find ./tmp -type f -exec sha256sum {} + > filelist.sha256
           HASH_ONLY=$(sha256sum "$INSTALLER_FILE" | cut -d ' ' -f 1)
-          cat filelist.sha256
-          echo "Main Installer Hash:"
-          echo "build_sha=$HASH_ONLY" >> $GITHUB_OUTPUT
-          echo "File count: $(wc -l < filelist.sha256)"
+          sha256sum "$INSTALLER_FILE" > "$INSTALLER_FILE.sha256"
+          echo "build_sha=$HASH_ONLY" >> "$GITHUB_OUTPUT"
+          echo "installer_name=$INSTALLER_FILE" >> "$GITHUB_OUTPUT"
+          echo "Processed $INSTALLER_FILE with $(wc -l < filelist.sha256) files."
 
       - name: Upload Firefox to GitHub Release
         uses: softprops/action-gh-release@v2.5.0
         with:
           name: Release Nightly v${{ needs.check_date.outputs.var_build_num }}-${{ github.run_number }} [${{ needs.build.outputs.short_sha }}]
           repository: test6744/mozilla-unified
-          tag_name: release
+          tag_name: v${{ needs.check_date.outputs.var_build_num }}
           token: ${{ env.GH_TOKEN }}
           body: |
             **This release has been built by [Github Actions]**
@@ -305,6 +311,8 @@ jobs:
             ```
             ${{ steps.build_sha.outputs.build_sha }}
             ```
+            Internal Files Verified: $(wc -l < filelist.sha256)
+            
             To verify the build SHA256 during the action, click the build link, go-to "Create Release", open the Echo build sha256 step and read the sha256.
 
             These are nightly/experimental builds of Mozilla Firefox and may be unstable; Use at your OWN risk :warning:.
@@ -316,9 +324,3 @@ jobs:
           files: |
             *.installer.exe
             *.sha256
-
-
-
-
-
-
