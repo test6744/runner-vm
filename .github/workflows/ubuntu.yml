@@ -21,8 +21,6 @@ jobs:
         sudo sed -i 's|http://azure.|http://|g' /etc/apt/sources.list
         sudo chmod 0644 /boot/vmlinuz*
         sudo chmod +r /boot/vmlinuz-*
-        sudo apt-get update && sudo apt-get upgrade
-        sudo apt-get update && sudo apt-get install p7zip-full curl python3 python3-pip mercurial python3-venv
         source /etc/os-release
         
     - name: Checkout
