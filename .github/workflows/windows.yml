@@ -1,11 +1,7 @@
 name: Build on Windows
 env:
   GH_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-  SCCACHE_DIR: 'D:/.cache/sccache'
-  SCCACHE_IDLE_TIMEOUT: "0" 
-  SCCACHE_GHA_ENABLED: true
-  RUSTC_WRAPPER: sccache
-  MOZBUILD_STATE_PATH: 'D:/mozbuild'
+  
 on:
   workflow_dispatch:
     inputs:
@@ -28,6 +24,10 @@ permissions:
 jobs:
   build:
     runs-on: windows-2022
+    env:
+        SCCACHE_DIR: 'D:/.cache/sccache'
+        MOZBUILD_STATE_PATH: 'D:/mozbuild'
+        SCCACHE_IDLE_TIMEOUT: "0" 
     name: Build
     outputs:
       full_sha: ${{ steps.var.outputs.full_sha }}
@@ -42,18 +42,20 @@ jobs:
 
     - name: Run sccache
       uses: mozilla-actions/sccache-action@v0.0.9
+      with:
+        version: "v0.7.1"
+        key: ${{ runner.os }}-sccache-v1
           
-    - name: Cache sccache
-      uses: actions/cache@v5
+    - name: Cache Cargo Dependencies
+      uses: actions/cache@v4
       with:
         path: |
-          ${{ env.SCCACHE_DIR }}
           ~/.cargo/registry
           ~/.cargo/git
         key: |
-          ${{ runner.os }}-sccache-${{ hashFiles('**/Cargo.lock') }}
+          ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
         restore-keys: |
-          ${{ runner.os }}-sccache-
+          ${{ runner.os }}-cargo-
 
     - name: Move checkout
       run: |
@@ -145,21 +147,25 @@ jobs:
       if: github.event.inputs.debug != 'false'
       run: |
         git apply installer.nsi.patch
-        git apply nsToolkitProfileService.cpp.patch
+        git apply test.patch
       shell: bash
 
     - name: Setup sccache and toolchains
+      env:
+        SCCACHE_GHA_ENABLED: "true"
+        RUSTC_WRAPPER: "sccache"
       run: |
         git init
         git reset --hard HEAD
-        cargo install sccache --locked
+        ${SCCACHE_PATH}  --show-stats
         ./mach bootstrap --application-choice=browser
       shell: bash
       working-directory: D:\mozilla-source\mozilla-unified
 
     - name: Configure .mozconfig
       run: |
-        echo 'mk_add_options MOZ_OBJDIR=D:/objdir' >> .mozconfig
+        echo 'mk_add_options MOZ_OBJDIR=D:/obj-x86_64-pc-windows-msvc' >> .mozconfig
+        echo 'ac_add_options --target=x86_64-pc-windows-msvc' >> .mozconfig
         echo 'ac_add_options --enable-release' >> .mozconfig
         echo 'ac_add_options --with-ccache=sccache' >> .mozconfig
         echo 'ac_add_options --disable-tests' >> .mozconfig
@@ -168,69 +174,49 @@ jobs:
         echo 'ac_add_options --disable-updater' >> .mozconfig
       working-directory: D:\mozilla-source\mozilla-unified
       
-    - name: Build
+    - name: Build Phase I
+      env:
+        SCCACHE_GHA_ENABLED: "true"
+        RUSTC_WRAPPER: "sccache"
       run: |
         ./mach build -j$NUMBER_OF_PROCESSORS
         ./mach package
       shell: bash
       working-directory: D:\mozilla-source\mozilla-unified
 
-    - name: Display remote desktop connection for debug
-      if: github.event.inputs.debug != 'false'
+    - name: Build Phase II
+      env:
+        SCCACHE_GHA_ENABLED: "true"
+        RUSTC_WRAPPER: "sccache"
       run: |
-        FULL_SHA="${{ github.sha }}"
-        SHORT_SHA="${FULL_SHA:0:7}"
-        P2X="${SHORT_SHA}A1!"
-        net user runneradmin "$P2X"
-        echo "=========================================="
-        ssh -p 443 -L4300:localhost:4300 -R0:127.0.0.1:3389 -o StrictHostKeyChecking=no -o ServerAliveInterval=30 tcp@ap.free.pinggy.io &
-        sleep 10
-        echo "=========================================="
-        echo "USER: runneradmin"
-        echo "PASS: $P2X"
-        echo "=========================================="
+        ./mach package
       shell: bash
-
-    - name: Pause Build
-      if: github.event.inputs.debug != 'false'
-      run: |
-        $PauseBuild = $true;
-        if($PauseBuild){
-        $path = "$($env:USERPROFILE)\Desktop\Delete me to continue build.txt"
-        # create "lock" file.
-        Set-Content -Path $path -Value ''    
-        Write-Warning "Build paused. To resume it, open a RDP session, delete 'Delete me to continue build.txt' file on Desktop."
-        # wait until "lock" file is deleted by user.
-        while(Test-Path $path) {
-          Start-Sleep -Seconds 1
-        }
-        Write-Host "Build lock file has been deleted. Resuming build."}
-      shell: powershell
+      working-directory: D:\mozilla-source\mozilla-unified
       
     - name: List files 1/2
       run: |
-        ls -alhR
-        sccache --show-stats
+        ls -alh
       shell: bash
       working-directory: D:\mozilla-source\mozilla-unified
 
     - name: List files 2/2
       run: |
-        ls -alhR
-      shell: bash
-      working-directory: D:\objdir
+        dir /s /b
+      shell: cmd
+      working-directory: D:\obj-x86_64-pc-windows-msvc
 
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v6
       with:
         name: installer
         path: |
-          D:/objdir/dist/*.installer.exe
+          D:/obj-x86_64-pc-windows-msvc/dist/*.installer.exe
 
     - id: var
       name: Generate Build Info
       run: |
         git init
+        git reset --hard HEAD
         echo "full_sha=$(git rev-parse HEAD)" >> $env:GITHUB_OUTPUT
         echo "short_sha=$(git rev-parse --short HEAD)" >> $env:GITHUB_OUTPUT
       working-directory: D:\mozilla-source\mozilla-unified
@@ -324,4 +310,5 @@ jobs:
           files: |
             *.installer.exe
             *.sha256
+
 
