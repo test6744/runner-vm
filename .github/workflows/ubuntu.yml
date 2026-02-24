@@ -77,7 +77,7 @@ jobs:
         echo "ac_add_options --disable-debug" >> .mozconfig
         echo "ac_add_options --disable-updater" >> .mozconfig
         echo "ac_add_options --disable-crashreporter" >> .mozconfig
-        export MOZCONFIG=@TOPSRCDIR@/.mozconfig
+        export MOZCONFIG=.mozconfig
         ./mach build
         ./mach package
 
