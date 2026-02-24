@@ -38,7 +38,6 @@ jobs:
       with:
         repository: test6744/mozilla-unified
         persist-credentials: false
-        ref: ${{ github.head_ref }}
         fetch-depth: 1
 
     - name: Run sccache
@@ -311,6 +310,7 @@ jobs:
           files: |
             *.installer.exe
             *.sha256
+
 
 
 
