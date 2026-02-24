@@ -1,7 +1,11 @@
 name: Build on Windows
 env:
   GH_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-  
+  SCCACHE_DIR: 'D:/.cache/sccache'
+  SCCACHE_IDLE_TIMEOUT: "0" 
+  SCCACHE_GHA_ENABLED: true
+  RUSTC_WRAPPER: sccache
+  MOZBUILD_STATE_PATH: 'D:/mozbuild'
 on:
   workflow_dispatch:
     inputs:
@@ -23,10 +27,6 @@ permissions:
 
 jobs:
   build:
-    env:
-        SCCACHE_DIR: 'D:/.cache/sccache'
-        MOZBUILD_STATE_PATH: 'D:/mozbuild'
-        SCCACHE_IDLE_TIMEOUT: "0" 
     runs-on: windows-2022
     name: Build
     outputs:
@@ -45,16 +45,17 @@ jobs:
       with:
         version: "v0.14.0"
           
-    - name: Cache Cargo Dependencies
-      uses: actions/cache@v4
+    - name: Cache sccache
+      uses: actions/cache@v5
       with:
         path: |
+          ${{ env.SCCACHE_DIR }}
           ~/.cargo/registry
           ~/.cargo/git
         key: |
-          ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          ${{ runner.os }}-sccache-${{ hashFiles('**/Cargo.lock') }}
         restore-keys: |
-          ${{ runner.os }}-cargo-
+          ${{ runner.os }}-sccache-
 
     - name: Move checkout
       run: |
@@ -150,12 +151,10 @@ jobs:
       shell: bash
 
     - name: Setup sccache and toolchains
-      env:
-        SCCACHE_GHA_ENABLED: "true"
-        RUSTC_WRAPPER: "sccache"
       run: |
         git init
         git reset --hard HEAD
+        cargo install sccache --locked
         ./mach bootstrap --application-choice=browser
       shell: bash
       working-directory: D:\mozilla-source\mozilla-unified
@@ -173,9 +172,6 @@ jobs:
       working-directory: D:\mozilla-source\mozilla-unified
       
     - name: Build Phase I
-      env:
-        SCCACHE_GHA_ENABLED: "true"
-        RUSTC_WRAPPER: "sccache"
       run: |
         ./mach build -j$NUMBER_OF_PROCESSORS
         ./mach package
@@ -183,9 +179,6 @@ jobs:
       working-directory: D:\mozilla-source\mozilla-unified
 
     - name: Build Phase II
-      env:
-        SCCACHE_GHA_ENABLED: "true"
-        RUSTC_WRAPPER: "sccache"
       run: |
         ./mach build -j$NUMBER_OF_PROCESSORS
         ./mach package
@@ -195,6 +188,7 @@ jobs:
     - name: List files 1/2
       run: |
         ls -alh
+        ${SCCACHE_PATH} --show-stats
       shell: bash
       working-directory: D:\mozilla-source\mozilla-unified
 
@@ -309,10 +303,3 @@ jobs:
           files: |
             *.installer.exe
             *.sha256
-
-
-
-
-
-
-
