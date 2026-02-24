@@ -27,13 +27,6 @@ jobs:
         sudo add-apt-repository universe
         sudo apt-get update && sudo sudo apt-get upgrade && sudo apt install p7zip-full curl python3 python3-full python3-pip mercurial python3-venv git nsis zip unzip msitools
         source /etc/os-release
-        
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        repository: test6744/mozilla-unified
-        persist-credentials: false
-        fetch-depth: 1
 
     - name: Install Mercurial
       shell: bash
@@ -61,6 +54,7 @@ jobs:
       env:
         SCCACHE_GHA_ENABLED: "true"
         RUSTC_WRAPPER: "sccache"
+        SCCACHE_IDLE_TIMEOUT: "0" 
       shell: bash
       run: |
         cd ../mozilla-unified
@@ -78,6 +72,8 @@ jobs:
         echo "ac_add_options --disable-updater" >> .mozconfig
         echo "ac_add_options --disable-crashreporter" >> .mozconfig
         export MOZCONFIG=.mozconfig
+        ./mach bootstrap --application-choice=browser
+        ./mach clobber
         ./mach build
         ./mach package
 
