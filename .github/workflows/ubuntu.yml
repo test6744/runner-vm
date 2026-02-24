@@ -56,7 +56,6 @@ jobs:
       uses: mozilla-actions/sccache-action@v0.0.6
       with:
         version: "v0.7.1"
-        key: ${{ runner.os }}-sccache-v1
         
     - name: Build
       env:
