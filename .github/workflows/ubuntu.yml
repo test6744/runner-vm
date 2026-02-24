@@ -2,7 +2,6 @@ name: Build on Ubuntu
 env:
   GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }}
   CARGO_TERM_COLOR: always
-  MOZBOOT_NO_CLONE: 1
 
 on:
   workflow_dispatch:
@@ -44,18 +43,9 @@ jobs:
         ls -alh
         cd ../mozilla-unified
         ls -alh
-
-    - name: Run sccache-cache
-      uses: mozilla-actions/sccache-action@v0.0.6
-      with:
-        version: "v0.7.1"
         
     - name: Build
       continue-on-error: true
-      env:
-        SCCACHE_GHA_ENABLED: "true"
-        RUSTC_WRAPPER: "sccache"
-        SCCACHE_IDLE_TIMEOUT: "0" 
       shell: bash
       run: |
         cd ../mozilla-unified
