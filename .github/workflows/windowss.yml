@@ -311,7 +311,7 @@ jobs:
             ```
             ${{ steps.build_sha.outputs.build_sha }}
             ```
-            Internal Files Verified: $(wc -l < filelist.sha256)
+            Internal Files Verified: ${{ steps.build_sha.outputs.file_count }}
             
             To verify the build SHA256 during the action, click the build link, go-to "Create Release", open the Echo build sha256 step and read the sha256.
 
@@ -324,3 +324,4 @@ jobs:
           files: |
             *.installer.exe
             *.sha256
+
