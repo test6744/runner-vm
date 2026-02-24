@@ -1,4 +1,4 @@
-name: Build firefox on Ubuntu
+name: Build on Ubuntu
 env:
   GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }}
   CARGO_TERM_COLOR: always
@@ -19,8 +19,8 @@ jobs:
       uses: actions/checkout@v4
       with:
         repository: test6744/mozilla-unified
-        persist-credentials: false
         ref: ${{ github.ref_name }}
+        persist-credentials: false
         fetch-depth: 1
 
     - name: Update components
