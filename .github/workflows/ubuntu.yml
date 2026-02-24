@@ -35,9 +35,15 @@ jobs:
     - name: Install Mercurial
       run: |
         python -m pip install --upgrade pip
-        python3 -m pip install --user mercurial
+        python3 -m pip uninstall mercurial -y
+        python3 -m pip install mercurial --no-cache-dir --force-reinstall
         hg version
-        echo 'export PATH="'"$(python3 -m site --user-base)"'/bin:$PATH"' >> ~/.bashrc
+        echo 'export PATH="'"$(python3 -m site --user-base)"'/bin:$PATH"' >> $GITHUB_PATH
+
+    - name: Install Mercurial
+      run: |
+        hg clone --stream https://hg.mozilla.org/mozilla-unified
+        ls -alh
 
 #    - name: Bootstrap a copy of the Firefox source code
 #      run: |
@@ -53,7 +59,7 @@ jobs:
         git init
         git reset --hard HEAD
         7z a -tzip "tmp.zip" -r "../../${{ github.event.repository.name }}" -x!*.git -mx0
-        7z x "tmp.zip" -O".."
+        7z x "tmp.zip" -O"../../"
         rm -f tmp.zip
         cd ${{ github.event.repository.name }}
         ls -alh
