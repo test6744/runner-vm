@@ -96,12 +96,6 @@ jobs:
 
     - name: Commit
       run: |
-        git init
-        git reset --hard HEAD
-        7z a -tzip "tmp.zip" -r "../../${{ github.event.repository.name }}" -x!*.git -mx0
-        7z x "tmp.zip" -O"../"
-        rm -f tmp.zip
-        cd ${{ github.event.repository.name }}
         ls -alh
         rm -rf .git
         cd ../mozilla-unified
