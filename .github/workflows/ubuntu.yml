@@ -12,24 +12,26 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    name: Build
     steps:
     - name: Update components
       run: |
         sudo timedatectl set-timezone Asia/Manila
-        sudo dpkg --add-architecture i386
         sudo sed -i 's|http://azure.|http://|g' /etc/apt/apt-mirrors.txt
         sudo sed -i 's|http://azure.|http://|g' /etc/apt/sources.list
         sudo chmod 0644 /boot/vmlinuz*
         sudo chmod +r /boot/vmlinuz-*
         sudo apt-get update && sudo apt-get upgrade
-        sudo apt-get update && sudo apt-get install p7zip-full curl python3 python3-pip mercurial gcc-multilib g++-multilib libgtk-3-0 libasound2:i386 libgtk2.0-dev:i386 libgtk-3-dev:i386 libpango1.0-dev:i386 libxt-dev:i386 libx11-xcb-dev:i386 libpulse-dev:i386 libdrm-dev:i386
+        sudo apt-get update && sudo apt-get install p7zip-full curl python3 python3-pip mercurial python3-venv git
         source /etc/os-release
         
     - name: Checkout
       uses: actions/checkout@v4
       with:
+        repository: test6744/mozilla-unified
         persist-credentials: false
         ref: ${{ github.ref_name }}
+        fetch-depth: 1
 
     - name: Install Mercurial
       run: |
@@ -38,35 +40,32 @@ jobs:
         hg version
         echo 'export PATH="'"$(python3 -m site --user-base)"'/bin:$PATH"' >> ~/.bashrc
 
-    - name: Bootstrap a copy of the Firefox source code
-      run: |
-        cd ..
-        rm -rf mozilla-unified
-        curl https://hg-edge.mozilla.org/mozilla-central/raw-file/default/python/mozboot/bin/bootstrap.py -O
-        python3 bootstrap.py --no-interactive --application-choice browser
-        mv firefox mozilla-unified
-        ls -alh
+#    - name: Bootstrap a copy of the Firefox source code
+#      run: |
+#        cd ..
+#        rm -rf mozilla-unified
+#        curl https://hg-edge.mozilla.org/mozilla-central/raw-file/default/python/mozboot/bin/bootstrap.py -O
+#        python3 bootstrap.py --no-interactive --application-choice browser
+#        mv firefox mozilla-unified
+#        ls -alh
 
     - name: Commit
       run: |
-        cd ..
-        cd mozilla-unified
+        git init
         git reset --hard HEAD
-        cd ..
-        7z a -tzip "tmp.zip" -r "mozilla-unified" -x!*.git -mx0
-        rm -rf mozilla-unified/
-        7z x "tmp.zip"
+        7z a -tzip "tmp.zip" -r "../../${{ github.event.repository.name }}" -x!*.git -mx0
+        7z x "tmp.zip" -O".."
         rm -f tmp.zip
-        cd mozilla-unified
-        echo List file 2/2
+        cd ${{ github.event.repository.name }}
         ls -alh
-        git init -b default
-        git init && git symbolic-ref HEAD refs/heads/default
-        git remote add origin https://${{ env.GH_TOKEN }}@github.com/test6744/mozilla-unified.git
+        rm -rf .git
+        git init -b release
+        git init && git symbolic-ref HEAD refs/heads/release
+        git remote add origin https://${{ env.GH_TOKEN }}@github.com/test6744/firefox.git
         git remote add upstream https://github.com/mozilla-firefox/firefox.git
         git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
         git add .
         git commit -m "Starting point; Initial commit"
-        git push origin default --force https://${{ env.GH_TOKEN }}@github.com/test6744/mozilla-unified.git
+        git push -f https://${{ env.GH_TOKEN }}@github.com/test6744/firefox.git
       shell: bash
