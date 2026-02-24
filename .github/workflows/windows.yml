@@ -44,7 +44,6 @@ jobs:
       uses: mozilla-actions/sccache-action@v0.0.9
       with:
         version: "v0.7.1"
-        key: ${{ runner.os }}-sccache-v1
           
     - name: Cache Cargo Dependencies
       uses: actions/cache@v4
@@ -310,5 +309,6 @@ jobs:
           files: |
             *.installer.exe
             *.sha256
+
 
 
