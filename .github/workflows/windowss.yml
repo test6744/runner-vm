@@ -207,19 +207,25 @@ jobs:
         Write-Host "Build lock file has been deleted. Resuming build."}
       shell: powershell
       
-    - name: List files
+    - name: List files 1/2
       run: |
-        ls -alh
+        ls -alhR
         sccache --show-stats
       shell: bash
       working-directory: D:\mozilla-source\mozilla-unified
+
+    - name: List files 2/2
+      run: |
+        ls -alhR
+      shell: bash
+      working-directory: D:\objdir
 
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v6
       with:
         name: installer
         path: |
-          objdir/dist/install/sea/*.exe
+          D:/objdir/dist/*.installer.exe
 
     - id: var
       name: Generate Build Info
@@ -310,6 +316,7 @@ jobs:
           files: |
             *.installer.exe
             *.sha256
+
 
 
 
