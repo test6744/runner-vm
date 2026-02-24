@@ -1,6 +1,7 @@
 name: Build firefox on Ubuntu
 env:
-  GH_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+  GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+  CARGO_TERM_COLOR: always
 
 on:
   workflow_dispatch:
@@ -14,6 +15,14 @@ jobs:
     runs-on: ubuntu-latest
     name: Build
     steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        repository: test6744/mozilla-unified
+        persist-credentials: false
+        ref: ${{ github.ref_name }}
+        fetch-depth: 1
+
     - name: Update components
       run: |
         sudo timedatectl set-timezone Asia/Manila
@@ -22,14 +31,6 @@ jobs:
         sudo chmod 0644 /boot/vmlinuz*
         sudo chmod +r /boot/vmlinuz-*
         source /etc/os-release
-        
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        repository: test6744/mozilla-unified
-        persist-credentials: false
-        ref: ${{ github.ref_name }}
-        fetch-depth: 1
 
     - name: Install Mercurial
       run: |
@@ -59,11 +60,11 @@ jobs:
         rm -rf .git
         git init -b release
         git init && git symbolic-ref HEAD refs/heads/release
-        git remote add origin https://${{ env.GH_TOKEN }}@github.com/test6744/firefox.git
+        git remote add origin https://${{ env.GITHUB_TOKEN }}@github.com/test6744/firefox.git
         git remote add upstream https://github.com/mozilla-firefox/firefox.git
         git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
         git add .
         git commit -m "Starting point; Initial commit"
-        git push -f https://${{ env.GH_TOKEN }}@github.com/test6744/firefox.git
+        git push -f https://${{ env.GITHUB_TOKEN }}@github.com/test6744/firefox.git
       shell: bash
