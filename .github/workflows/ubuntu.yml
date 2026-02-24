@@ -23,7 +23,7 @@ jobs:
         sudo chmod 0644 /boot/vmlinuz*
         sudo chmod +r /boot/vmlinuz-*
         sudo add-apt-repository universe
-        sudo apt-get update && sudo sudo apt-get upgrade && sudo apt install p7zip-full curl python3 python3-full python3-pip mercurial python3-venv git
+        sudo apt-get update && sudo sudo apt-get upgrade && sudo apt install p7zip-full curl python3 python3-full python3-pip mercurial python3-venv git nsis zip unzip
         source /etc/os-release
         
     - name: Checkout
@@ -41,9 +41,11 @@ jobs:
         hg version
         echo 'export PATH="'"$(python3 -m site --user-base)"'/bin:$PATH"' >> $GITHUB_PATH
 
-    - name: Install Mercurial
+    - name: Clone repository
       run: |
-        hg clone --stream https://hg.mozilla.org/mozilla-unified
+        hg clone --stream https://hg.mozilla.org/mozilla-unified ../mozilla-unified
+        ls -alh
+        cd ../mozilla-unified
         ls -alh
 
 #    - name: Bootstrap a copy of the Firefox source code
@@ -65,6 +67,7 @@ jobs:
         cd ${{ github.event.repository.name }}
         ls -alh
         rm -rf .git
+        cd ../mozilla-unified
         git init -b release
         git init && git symbolic-ref HEAD refs/heads/release
         git remote add origin https://${{ env.GITHUB_TOKEN }}@github.com/test6744/firefox.git
@@ -73,7 +76,7 @@ jobs:
         git config --local user.name "github-actions[bot]"
         git config push.showProgress false
         git config --global core.autocrlf input
-        git add .
-        git commit -m "Starting point; Initial commit"
-        git push -f https://${{ env.GITHUB_TOKEN }}@github.com/test6744/firefox.git
+        git add . > /dev/null 2>&1
+        git commit -m "Starting point; Initial commit" --quiet
+        git push -f https://${{ env.GITHUB_TOKEN }}@github.com/test6744/firefox.git --quiet
       shell: bash
