@@ -194,7 +194,7 @@ jobs:
       run: |
         dir /s /b
       shell: cmd
-      working-directory: D:\.cache
+      working-directory: D:/.cache
 
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v6
@@ -301,5 +301,6 @@ jobs:
           files: |
             *.installer.exe
             *.sha256
+
 
 
