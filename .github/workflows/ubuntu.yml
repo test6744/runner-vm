@@ -50,9 +50,26 @@ jobs:
       run: |
         cd ../mozilla-unified
         hg pull && hg update
+        rm -rf .cargo
+        rm -rf .claude
+        rm -rf .codex
+        rm -rf .github
         rm -rf .hg
-        rm -rf third_party
-        rm -rf testing
+        rm -rf accessible
+        rm -rf browser
+        rm -rf build
+        rm -rf caps
+        rm -rf chrome
+        rm -rf devtools
+        rm -rf docs
+        rm -rf docshell
+        rm -rf dom
+        rm -rf editor
+        rm -rf extensions
+        rm -rf gfx
+        rm -rf gradle
+        rm -rf hal
+        rm -rf image
         rm -rf intl
 #        ./mach bootstrap --application-choice=browser
 #        echo "mk_add_options MOZ_OBJDIR=@TOPSRCDIR@/obj-x86_64-pc-mingw32" > .mozconfig
