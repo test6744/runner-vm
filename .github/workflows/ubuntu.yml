@@ -35,6 +35,9 @@ jobs:
         python3 -m pip install mercurial --no-cache-dir --force-reinstall
         echo 'export PATH="'"$(python3 -m site --user-base)"'/bin:$PATH"' >> $GITHUB_PATH
         hg version
+        echo -e "[extensions]\nfsmonitor =\n[worker]\nenabled = True\nnumcpus = 4\n" > ~/.hgrc
+        hg debugextensions
+        hg config worker
 
     - name: Clone repository
       shell: bash
@@ -49,8 +52,6 @@ jobs:
       run: |
         cd ../mozilla-unified
         hg pull && hg update
-        cat <<EOF >> .hgrc
-        echo -e "[extensions]\nfsmonitor =" > .hgrc
         rm -rf third_party
         rm -rf testing
         rm -rf .hg
@@ -116,4 +117,3 @@ jobs:
           git commit -m "Update: Added new build data $(date +'%Y-%m-%d')"
           git push origin release
         fi
-      shell: bash
