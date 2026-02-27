@@ -34,10 +34,9 @@ jobs:
       short_sha: ${{ steps.var.outputs.short_sha }}
     steps:
     - name: Checkout
-      if: github.event.inputs.debug != 'false'
       uses: actions/checkout@v4
       with:
-        repository: test6744/firefox
+        repository: test6744/mozilla-unified
         persist-credentials: false
         fetch-depth: 1
 
@@ -74,7 +73,7 @@ jobs:
       run: |
         aria2c https://ftp.mozilla.org/pub/mozilla/libraries/win32/MozillaBuildSetup-Latest.exe
         start /W MozillaBuildSetup-Latest.exe /S
-        call C:\mozilla-build\start-shell.bat
+        cmd /c C:\mozilla-build\start-shell.bat
         erase MozillaBuildSetup-Latest.exe
       shell: cmd
 
@@ -88,10 +87,10 @@ jobs:
         Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -name "UserAuthentication" -Value 1
       
     - name: Add mercurial to PATH
+      if: github.event.inputs.debug != 'false'
       run: |
         /c/mozilla-build/python3/python3.exe -m pip uninstall mercurial -y
         /c/mozilla-build/python3/python3.exe -m pip install mercurial --no-cache-dir --force-reinstall
-        echo 'export PATH="'"$(/c/mozilla-build/python3/python3.exe -m site --user-base)"'/bin:$PATH"' >> $GITHUB_PATH
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
       working-directory: D:\mozilla-source\mozilla-unified
 
@@ -152,7 +151,9 @@ jobs:
 
     - name: Setup sccache and toolchains
       run: |
-        hg pull && hg update
+        git init
+        git reset --hard HEAD
+        ${SCCACHE_PATH} --start-server
         ./mach bootstrap --application-choice=browser
       shell: bash
       working-directory: D:\mozilla-source\mozilla-unified
@@ -169,13 +170,44 @@ jobs:
         echo 'ac_add_options --disable-updater' >> .mozconfig
       working-directory: D:\mozilla-source\mozilla-unified
       
-    - name: Build
+    - name: Build Phase I
       run: |
-        ${SCCACHE_PATH} --start-server
         ./mach build -j$NUMBER_OF_PROCESSORS
         ./mach package
-      shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
+      shell: bash
       working-directory: D:\mozilla-source\mozilla-unified
+
+    - name: List files 1/2
+      run: |
+        ls -alh
+        ${SCCACHE_PATH} --show-stats
+      shell: bash
+      working-directory: D:\mozilla-source\mozilla-unified
+
+    - name: Cache sccache Phase II
+      uses: actions/cache@v5
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+        key: |
+          ${{ runner.os }}-sccache-v2-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-sccache-v2-
+
+    - name: Build Phase II
+      run: |
+        ./mach clean
+        ./mach build -j$NUMBER_OF_PROCESSORS
+        ./mach package
+      shell: bash
+      working-directory: D:\mozilla-source\mozilla-unified
+
+    - name: List files 2/2
+      run: |
+        dir /s /b
+      shell: cmd
+      working-directory: D:\obj-x86_64-pc-windows-msvc
 
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v6
@@ -248,17 +280,19 @@ jobs:
           if [ -z "$INSTALLER_FILE" ]; then echo "No installer found!"; exit 1; fi
           7z x "$INSTALLER_FILE" -o"tmp" -y > /dev/null
           find ./tmp -type f -exec sha256sum {} + > filelist.sha256
-          HASH_ONLY=$(sha256sum "$INSTALLER_FILE" | cut -d ' ' -f 1)
+          HASH_ONLY=$(sha256sum "$INSTALLER_FILE" | awk '{print $1}')
           sha256sum "$INSTALLER_FILE" > "$INSTALLER_FILE.sha256"
+          COUNT=$(wc -l < filelist.sha256)
           echo "build_sha=$HASH_ONLY" >> "$GITHUB_OUTPUT"
           echo "installer_name=$INSTALLER_FILE" >> "$GITHUB_OUTPUT"
+          echo "file_count=$COUNT" >> "$GITHUB_OUTPUT"
           echo "Processed $INSTALLER_FILE with $(wc -l < filelist.sha256) files."
 
       - name: Upload Firefox to GitHub Release
         uses: softprops/action-gh-release@v2.5.0
         with:
           name: Release Nightly v${{ needs.check_date.outputs.var_build_num }}-${{ github.run_number }} [${{ needs.build.outputs.short_sha }}]
-          repository: test6744/firefox
+          repository: test6744/mozilla-unified
           tag_name: v${{ needs.check_date.outputs.var_build_num }}
           token: ${{ env.GH_TOKEN }}
           body: |
@@ -269,10 +303,11 @@ jobs:
             ```
             ${{ steps.build_sha.outputs.build_sha }}
             ```
-            Internal Files Verified: ${{ steps.build_sha.outputs.file_count }}
+            "Files Verified: ${{ steps.build_sha.outputs.file_count }}"
             
             To verify the build SHA256 during the action, click the build link, go-to "Create Release", open the Echo build sha256 step and read the sha256.
 
+            > [!WARNING]
             These are nightly/experimental builds of Mozilla Firefox and may be unstable; Use at your OWN risk :warning:.
 
             Full Commit Hash:
@@ -280,16 +315,5 @@ jobs:
             ${{ needs.build.outputs.full_sha }}
             ```
           files: |
-            *.installer.exe
+            ${{ steps.build_sha.outputs.installer_name }}
             *.sha256
-
-
-
-
-
-
-
-
-
-
-
