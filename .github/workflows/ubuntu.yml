@@ -91,8 +91,11 @@ jobs:
         ls -alh
         rm -rf .git
         cd ../mozilla-unified
-        git init -b release
+        if [ ! -d ".git" ]; then
+          git clone -b release https://${{ env.GITHUB_TOKEN }}@github.com/test6744/firefox.git .
+        fi
         git init && git symbolic-ref HEAD refs/heads/release
+        git pull origin release --rebase
         git remote add origin https://${{ env.GITHUB_TOKEN }}@github.com/test6744/firefox.git
         git remote add upstream https://github.com/mozilla-firefox/firefox.git
         git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -100,6 +103,10 @@ jobs:
         git config push.showProgress false
         git config --global core.autocrlf input
         git add .
-        git commit -m "Starting point; Initial commit" --quiet
-        git push -f https://${{ env.GITHUB_TOKEN }}@github.com/test6744/firefox.git --quiet
+        if git diff --staged --quiet; then
+          echo "No new data to push."
+        else
+          git commit -m "Update: Added new build data $(date +'%Y-%m-%d')"
+          git push origin release
+        fi
       shell: bash
