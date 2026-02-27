@@ -27,7 +27,7 @@ permissions:
 
 jobs:
   build:
-    runs-on: windows-2022
+    runs-on: windows-2019
     name: Build
     outputs:
       full_sha: ${{ steps.var.outputs.full_sha }}
@@ -301,6 +301,7 @@ jobs:
           files: |
             *.installer.exe
             *.sha256
+
 
 
 
