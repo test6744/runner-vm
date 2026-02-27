@@ -52,6 +52,7 @@ jobs:
         rm -rf .hg
         rm -rf third_party
         rm -rf testing
+        rm -rf intl
 #        ./mach bootstrap --application-choice=browser
 #        echo "mk_add_options MOZ_OBJDIR=@TOPSRCDIR@/obj-x86_64-pc-mingw32" > .mozconfig
 #        echo "ac_add_options --with-ccache=sccache" >> .mozconfig
