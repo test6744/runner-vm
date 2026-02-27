@@ -87,7 +87,6 @@ jobs:
         Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -name "UserAuthentication" -Value 1
       
     - name: Add mercurial to PATH
-      if: github.event.inputs.debug != 'false'
       run: |
         /c/mozilla-build/python3/python3.exe -m pip uninstall mercurial -y
         /c/mozilla-build/python3/python3.exe -m pip install mercurial --no-cache-dir --force-reinstall
@@ -283,6 +282,7 @@ jobs:
           files: |
             *.installer.exe
             *.sha256
+
 
 
 
