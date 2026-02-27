@@ -153,7 +153,7 @@ jobs:
       run: |
         git init
         git reset --hard HEAD
-        cargo install sccache --locked
+        hg pull && hg update
         ./mach bootstrap --application-choice=browser
       shell: bash
       working-directory: D:\mozilla-source\mozilla-unified
@@ -283,6 +283,7 @@ jobs:
           files: |
             *.installer.exe
             *.sha256
+
 
 
 
