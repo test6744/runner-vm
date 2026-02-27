@@ -50,6 +50,10 @@ jobs:
       run: |
         cd ../mozilla-unified
         hg pull && hg update
+        cat <<EOF >> .hgrc
+        [extensions]
+        fsmonitor =
+        EOF
         rm -rf .cargo
         rm -rf .claude
         rm -rf .codex
