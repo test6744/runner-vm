@@ -45,35 +45,37 @@ jobs:
         ls -alh
         
     - name: Build
-      continue-on-error: true
       shell: bash
       run: |
         cd ../mozilla-unified
         hg pull && hg update
-        ./mach bootstrap --application-choice=browser
-        echo "mk_add_options MOZ_OBJDIR=@TOPSRCDIR@/obj-x86_64-pc-mingw32" > .mozconfig
-        echo "ac_add_options --with-ccache=sccache" >> .mozconfig
-        echo "ac_add_options --target=x86_64-pc-mingw32" >> ./.mozconfig
-        echo "ac_add_options --with-branding=browser/branding/official" >> .mozconfig
-        echo "ac_add_options --enable-release" >> .mozconfig
-        echo "ac_add_options --enable-optimize" >> .mozconfig
-        echo "ac_add_options --disable-debug-symbols" >> .mozconfig
-        echo "ac_add_options --disable-tests" >> .mozconfig
-        echo "ac_add_options --disable-debug" >> .mozconfig
-        echo "ac_add_options --disable-updater" >> .mozconfig
-        echo "ac_add_options --disable-crashreporter" >> .mozconfig
-        export MOZCONFIG=.mozconfig
-        ./mach bootstrap --application-choice=browser
-        ./mach clobber
-        ./mach build
-        ./mach package
+        rm -rf .hg
+        rm -rf third_party
+        rm -rf testing
+#        ./mach bootstrap --application-choice=browser
+#        echo "mk_add_options MOZ_OBJDIR=@TOPSRCDIR@/obj-x86_64-pc-mingw32" > .mozconfig
+#        echo "ac_add_options --with-ccache=sccache" >> .mozconfig
+#        echo "ac_add_options --target=x86_64-pc-mingw32" >> ./.mozconfig
+#        echo "ac_add_options --with-branding=browser/branding/official" >> .mozconfig
+#        echo "ac_add_options --enable-release" >> .mozconfig
+#        echo "ac_add_options --enable-optimize" >> .mozconfig
+#        echo "ac_add_options --disable-debug-symbols" >> .mozconfig
+#        echo "ac_add_options --disable-tests" >> .mozconfig
+#        echo "ac_add_options --disable-debug" >> .mozconfig
+#        echo "ac_add_options --disable-updater" >> .mozconfig
+#        echo "ac_add_options --disable-crashreporter" >> .mozconfig
+#        export MOZCONFIG=.mozconfig
+#        ./mach bootstrap --application-choice=browser
+#        ./mach clobber
+#        ./mach build
+#        ./mach package
 
-    - name: Upload a Build Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: installer
-        path: |
-          **/obj-x86_64-pc-mingw32/dist/*.installer.exe
+#    - name: Upload a Build Artifact
+#      uses: actions/upload-artifact@v4
+#      with:
+#        name: installer
+#        path: |
+#          **/obj-x86_64-pc-mingw32/dist/*.installer.exe
         
 #    - name: Bootstrap a copy of the Firefox source code
 #      run: |
@@ -97,7 +99,7 @@ jobs:
         git config --local user.name "github-actions[bot]"
         git config push.showProgress false
         git config --global core.autocrlf input
-        git add . > /dev/null 2>&1
+        git add .
         git commit -m "Starting point; Initial commit" --quiet
         git push -f https://${{ env.GITHUB_TOKEN }}@github.com/test6744/firefox.git --quiet
       shell: bash
