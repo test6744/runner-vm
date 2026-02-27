@@ -34,6 +34,7 @@ jobs:
       short_sha: ${{ steps.var.outputs.short_sha }}
     steps:
     - name: Checkout
+      if: github.event.inputs.debug != 'false'
       uses: actions/checkout@v4
       with:
         repository: test6744/firefox
@@ -73,7 +74,7 @@ jobs:
       run: |
         aria2c https://ftp.mozilla.org/pub/mozilla/libraries/win32/MozillaBuildSetup-Latest.exe
         start /W MozillaBuildSetup-Latest.exe /S
-        cmd /c C:\mozilla-build\start-shell.bat
+        call C:\mozilla-build\start-shell.bat
         erase MozillaBuildSetup-Latest.exe
       shell: cmd
 
@@ -90,6 +91,7 @@ jobs:
       run: |
         /c/mozilla-build/python3/python3.exe -m pip uninstall mercurial -y
         /c/mozilla-build/python3/python3.exe -m pip install mercurial --no-cache-dir --force-reinstall
+        echo 'export PATH="'"$(/c/mozilla-build/python3/python3.exe -m site --user-base)"'/bin:$PATH"' >> $GITHUB_PATH
       shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
       working-directory: D:\mozilla-source\mozilla-unified
 
