@@ -169,12 +169,12 @@ jobs:
         echo 'ac_add_options --disable-updater' >> .mozconfig
       working-directory: D:\mozilla-source\mozilla-unified
       
-    - name: Build Phase I
+    - name: Build
       run: |
         ${SCCACHE_PATH} --start-server
         ./mach build -j$NUMBER_OF_PROCESSORS
         ./mach package
-      shell: bash
+      shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
       working-directory: D:\mozilla-source\mozilla-unified
 
     - name: Upload a Build Artifact
@@ -282,6 +282,7 @@ jobs:
           files: |
             *.installer.exe
             *.sha256
+
 
 
 
