@@ -98,7 +98,6 @@ jobs:
         fi
         git init && git symbolic-ref HEAD refs/heads/release
         git fetch origin release
-        git pull origin release --rebase
         git remote add origin https://${{ env.GITHUB_TOKEN }}@github.com/test6744/firefox.git
         git remote add upstream https://github.com/mozilla-firefox/firefox.git
         git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
