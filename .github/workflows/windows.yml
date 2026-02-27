@@ -172,29 +172,11 @@ jobs:
       
     - name: Build Phase I
       run: |
+        ${SCCACHE_PATH} --start-server
         ./mach build -j$NUMBER_OF_PROCESSORS
         ./mach package
       shell: bash
       working-directory: D:\mozilla-source\mozilla-unified
-      
-    - name: List files 1/3
-      run: |
-        ls -alh
-        ${SCCACHE_PATH} --show-stats
-      shell: bash
-      working-directory: D:\mozilla-source\mozilla-unified
-
-    - name: List files 2/3
-      run: |
-        dir /s /b
-      shell: cmd
-      working-directory: D:\obj-x86_64-pc-windows-msvc
-
-    - name: List files 3/3
-      run: |
-        dir /s /b
-      shell: cmd
-      working-directory: D:/.cache
 
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v6
@@ -301,6 +283,7 @@ jobs:
           files: |
             *.installer.exe
             *.sha256
+
 
 
 
