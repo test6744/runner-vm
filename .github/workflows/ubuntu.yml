@@ -23,13 +23,13 @@ jobs:
         sudo chmod 0644 /boot/vmlinuz*
         sudo chmod +r /boot/vmlinuz-*
         sudo add-apt-repository universe
-        sudo apt-get update && sudo sudo apt-get upgrade && sudo apt install -y p7zip-full curl python3 python3-full python3-pip mercurial python3-venv git nsis zip unzip msitools git watchman mercurial
+        sudo apt-get update && sudo sudo apt-get upgrade && sudo apt install -y p7zip-full curl python3 python3-full python3-pip mercurial python3-venv git nsis zip unzip msitools git watchman mercurial screenfetch
         source /etc/os-release
         sudo systemctl daemon-reload
 
     - name: Install Mercurial
-      shell: bash
       run: |
+        screenfetch
         python -m pip install --upgrade pip
         pip install --upgrade mercurial
         python3 -m pip install mercurial --no-cache-dir --force-reinstall
@@ -40,7 +40,6 @@ jobs:
         hg config worker
 
     - name: Clone repository
-      shell: bash
       run: |
         hg clone --stream https://hg.mozilla.org/mozilla-unified ../mozilla-unified
         ls -alh
@@ -48,7 +47,6 @@ jobs:
         ls -alh
         
     - name: Build
-      shell: bash
       run: |
         cd ../mozilla-unified
         hg pull && hg update
