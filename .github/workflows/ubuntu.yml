@@ -52,9 +52,6 @@ jobs:
       run: |
         cd ../mozilla-unified
         hg pull && hg update
-        rm -rf third_party
-        rm -rf testing
-        rm -rf .hg
 #        ./mach bootstrap --application-choice=browser
 #        echo "mk_add_options MOZ_OBJDIR=@TOPSRCDIR@/obj-x86_64-pc-mingw32" > .mozconfig
 #        echo "ac_add_options --with-ccache=sccache" >> .mozconfig
@@ -92,14 +89,8 @@ jobs:
     - name: Commit
       run: |
         git clone https://${{ env.GITHUB_TOKEN }}@github.com/test6744/firefox.git
+        rsync -av --exclude='.hg*' --exclude='.git*' ../mozilla-unified/ ./firefox/
         cd firefox
-        7z a -tzip "../abc.zip" -r ".git" -mx0
-        cd ..
-        rm -rf firefox
-        unzip abc.zip -d "mozilla-unified"
-        ls -alh
-        rm -rf .git
-        cd ../mozilla-unified
         if [ ! -d ".git" ]; then
           git init
           git remote add origin https://${{ env.GITHUB_TOKEN }}@github.com/test6744/firefox.git
