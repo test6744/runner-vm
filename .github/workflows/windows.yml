@@ -152,8 +152,6 @@ jobs:
 
     - name: Setup sccache and toolchains
       run: |
-        git init
-        git reset --hard HEAD
         hg pull && hg update
         ./mach bootstrap --application-choice=browser
       shell: bash
@@ -284,6 +282,7 @@ jobs:
           files: |
             *.installer.exe
             *.sha256
+
 
 
 
