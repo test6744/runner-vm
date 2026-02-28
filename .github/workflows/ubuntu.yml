@@ -89,6 +89,57 @@ jobs:
         git clone https://${{ env.GITHUB_TOKEN }}@github.com/test6744/firefox.git
         cd firefox
         git switch release
+        rm -rf .cargo
+        rm -rf .claude
+        rm -rf .codex
+        rm -rf .github
+        rm -rf .hg
+        rm -rf accessible
+        rm -rf browser
+        rm -rf build
+        rm -rf caps
+        rm -rf chrome
+        rm -rf devtools
+        rm -rf docs
+        rm -rf docshell
+        rm -rf dom
+        rm -rf editor
+        rm -rf extensions
+        rm -rf gfx
+        rm -rf gradle
+        rm -rf hal
+        rm -rf image
+        rm -rf intl
+        rm -rf ipc
+        rm -rf js
+        rm -rf layout
+        rm -rf media
+        rm -rf memory
+        rm -rf mfbt
+        rm -rf mobile
+        rm -rf modules
+        rm -rf mozglue
+        rm -rf netwerk
+        rm -rf nsprpub
+        rm -rf other-licenses
+        rm -rf parser
+        rm -rf python
+        rm -rf remote
+        rm -rf security
+        rm -rf services
+        rm -rf servo
+        rm -rf startupcache
+        rm -rf storage
+        rm -rf supply-chain
+        rm -rf taskcluster
+        rm -rf toolkit
+        rm -rf third_party
+        rm -rf testing
+        rm -rf tools
+        rm -rf uriloader
+        rm -rf widget
+        rm -rf xpcom
+        rm -rf xpfe
         cd ..
         rsync -av --exclude='.hg*' --exclude='.git*' ../mozilla-unified/ ./firefox/
         cd firefox
