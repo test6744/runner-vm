@@ -38,7 +38,6 @@ jobs:
       with:
         repository: test6744/firefox
         persist-credentials: false
-        fetch-depth: 1
 
     - name: Run sccache
       uses: mozilla-actions/sccache-action@v0.0.9
@@ -197,7 +196,6 @@ jobs:
 
     - name: Build Phase II
       run: |
-        ./mach clean
         ./mach build -j$NUMBER_OF_PROCESSORS
         ./mach package
       shell: bash
@@ -317,3 +315,4 @@ jobs:
           files: |
             ${{ steps.build_sha.outputs.installer_name }}
             *.sha256
+
