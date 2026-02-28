@@ -38,6 +38,7 @@ jobs:
       with:
         repository: test6744/firefox
         persist-credentials: false
+        token: ${{ env.GH_TOKEN }}
 
     - name: Run sccache
       uses: mozilla-actions/sccache-action@v0.0.9
@@ -315,4 +316,5 @@ jobs:
           files: |
             ${{ steps.build_sha.outputs.installer_name }}
             *.sha256
+
 
