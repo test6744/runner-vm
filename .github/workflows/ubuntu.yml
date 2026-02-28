@@ -87,9 +87,7 @@ jobs:
     - name: Commit
       run: |
         git clone https://${{ env.GITHUB_TOKEN }}@github.com/test6744/firefox.git
-        git clone https://github.com/test6744/mozilla-unified.git ../mozilla-unified2
         cd firefox
-        git switch release
         rm -rf .cargo
         rm -rf .claude
         rm -rf .codex
@@ -142,14 +140,13 @@ jobs:
         rm -rf xpcom
         rm -rf xpfe
         cd ..
-        rsync -av --exclude='.hg*' --exclude='.git*' ../mozilla-unified2/ ./firefox/
+        rsync -av --exclude='.hg*' --exclude='.git*' ../mozilla-unified/ ./firefox/
         cd firefox
         if [ ! -d ".git" ]; then
           git init
           git remote add origin https://${{ env.GITHUB_TOKEN }}@github.com/test6744/firefox.git
           git remote add upstream https://github.com/mozilla-firefox/firefox.git
         fi
-        git init && git symbolic-ref HEAD refs/heads/release
         git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
         git config push.showProgress false
