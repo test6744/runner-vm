@@ -87,6 +87,7 @@ jobs:
     - name: Commit
       run: |
         git clone https://${{ env.GITHUB_TOKEN }}@github.com/test6744/firefox.git
+        git clone https://github.com/test6744/mozilla-unified.git mozilla-unified2
         cd firefox
         git switch release
         rm -rf .cargo
@@ -141,7 +142,7 @@ jobs:
         rm -rf xpcom
         rm -rf xpfe
         cd ..
-        rsync -av --exclude='.hg*' --exclude='.git*' ../mozilla-unified/ ./firefox/
+        rsync -av --exclude='.hg*' --exclude='.git*' ../mozilla-unified2/ ./firefox/
         cd firefox
         if [ ! -d ".git" ]; then
           git init
