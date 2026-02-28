@@ -87,6 +87,9 @@ jobs:
     - name: Commit
       run: |
         git clone https://${{ env.GITHUB_TOKEN }}@github.com/test6744/firefox.git
+        cd firefox
+        git switch release
+        cd ..
         rsync -av --exclude='.hg*' --exclude='.git*' ../mozilla-unified/ ./firefox/
         cd firefox
         if [ ! -d ".git" ]; then
