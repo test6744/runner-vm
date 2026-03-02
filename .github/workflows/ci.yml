@@ -22,11 +22,13 @@ jobs:
     - name: Git check
       run: |
         git --version
-    - name: Checkout (Thirdparty)
+    - name: Setup MozillaBuild
       run: |
-        git clone https://gitlab.com/${{ secrets.GITLAB_REPOSITORY }}.git work
-        cd work
-        git switch ${{ secrets.GITLAB_REF }}
+        aria2c https://ftp.mozilla.org/pub/mozilla/libraries/win32/MozillaBuildSetup-Latest.exe
+        start /W MozillaBuildSetup-Latest.exe /S
+        cmd /c C:\mozilla-build\start-shell.bat
+        erase MozillaBuildSetup-Latest.exe
+      shell: cmd
     - name: Checkout
       uses: actions/checkout@v4
       with:
