@@ -87,16 +87,19 @@ jobs:
     - name: Commit
       run: |
         git clone https://${{ env.GITHUB_TOKEN }}@github.com/test6744/firefox.git
-        cd ..
-        rsync -av --exclude='.hg*' --exclude='.git*' ../mozilla-unified/ ./firefox/
+        7z a -tzip "tmp.zip" -r "firefox/.git" -mx0
+        rm -rf firefox
+        mkdir -p firefox
+        rsync -av --exclude='.hg*' --exclude='.git*' ./mozilla-unified/ ./firefox/
+        unzip "tmp.zip" -d "firefox"
         cd firefox
         if [ ! -d ".git" ]; then
           git init
           git remote add origin https://${{ env.GITHUB_TOKEN }}@github.com/test6744/firefox.git
           git remote add upstream https://github.com/mozilla-firefox/firefox.git
         fi
-        git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
-        git config --local user.name "github-actions[bot]"
+        git config --local user.email "234492490+test6744@users.noreply.github.com"
+        git config --local user.name "test6744"
         git config push.showProgress false
         git config --global core.autocrlf input
         git add .
