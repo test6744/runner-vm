@@ -56,6 +56,17 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-sccache-
 
+    - name: Cache sccache Phase II
+      uses: actions/cache@v5
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+        key: |
+          ${{ runner.os }}-sccache-v2-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-sccache-v2-
+
     - name: Move checkout
       run: |
         cd ..
@@ -184,17 +195,6 @@ jobs:
       shell: bash
       working-directory: D:\mozilla-source\mozilla-unified
 
-    - name: Cache sccache Phase II
-      uses: actions/cache@v5
-      with:
-        path: |
-          ~/.cargo/registry
-          ~/.cargo/git
-        key: |
-          ${{ runner.os }}-sccache-v2-${{ hashFiles('**/Cargo.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-sccache-v2-
-
     - name: Build Phase II
       run: |
         ./mach build -j$NUMBER_OF_PROCESSORS
@@ -316,5 +316,6 @@ jobs:
           files: |
             ${{ steps.build_sha.outputs.installer_name }}
             *.sha256
+
 
 
