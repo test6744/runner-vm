@@ -36,7 +36,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
       with:
-        repository: test6744/firefox
+        repository: test6744/mozilla-unified
         persist-credentials: false
         token: ${{ env.GH_TOKEN }}
 
@@ -291,7 +291,7 @@ jobs:
         uses: softprops/action-gh-release@v2.5.0
         with:
           name: Release Nightly v${{ needs.check_date.outputs.var_build_num }}-${{ github.run_number }} [${{ needs.build.outputs.short_sha }}]
-          repository: test6744/firefox
+          repository: test6744/mozilla-unified
           tag_name: v${{ needs.check_date.outputs.var_build_num }}
           token: ${{ env.GH_TOKEN }}
           body: |
@@ -316,6 +316,7 @@ jobs:
           files: |
             ${{ steps.build_sha.outputs.installer_name }}
             *.sha256
+
 
 
 
