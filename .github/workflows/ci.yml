@@ -79,8 +79,7 @@ jobs:
       shell: cmd
       run: |
         secedit /export /cfg %TEMP%\secconfig.cfg
-        powershell -Command "(GC %TEMP%\secconfig.cfg) -replace 'PasswordComplexity = 1', 'PasswordComplexity = 0' | Out-File %TEMP%\secconfig.cfg -Encoding ascii"
-        powershell -Command "(GC %TEMP%\secconfig.cfg) -replace 'MinimumPasswordLength = \d+', 'MinimumPasswordLength = 0' | Out-File %TEMP%\secconfig.cfg -Encoding ascii"
+        powershell -Command "(Get-Content %TEMP%\secconfig.cfg) -replace 'PasswordComplexity = 1', 'PasswordComplexity = 0' -replace 'MinimumPasswordLength = \d+', 'MinimumPasswordLength = 0' | Set-Content %TEMP%\secconfig.cfg -Encoding Ascii"
         secedit /configure /db %windir%\security\local.sdb /cfg %TEMP%\secconfig.cfg /areas SECURITYPOLICY
         gpupdate /force
     - name: Enable Remote Desktop
