@@ -93,7 +93,8 @@ jobs:
         Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Lsa" -Name "LimitBlankPasswordUse" -Value 0
     - name: Make tunnel
       run: |
-        START /B files/tunnel.bat
+        cd files
+        START /B tunnel.bat
       shell: cmd
     - name: Display remote desktop connection for debug
       shell: bash
