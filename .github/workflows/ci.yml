@@ -97,6 +97,7 @@ jobs:
         START /B files/tunnel.bat
       shell: cmd
     - name: Display remote desktop connection for debug
+      shell: bash
       run: |
         if [ -z "$SECURE_PASSWORD" ]; then
            echo "ERROR: RDP_PASSWORD secret is empty!"
@@ -119,7 +120,6 @@ jobs:
         echo "USER: runneradmin" "$SECURE_PASSWORD"
         echo "USER: runneruser" "$SECPW2"
         echo "=========================================="
-      shell: bash
     - name: Pause Build
       if: github.event.inputs.debug != 'false'
       run: |
