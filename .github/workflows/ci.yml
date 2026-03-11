@@ -1,0 +1,137 @@
+name: CI
+env:
+  PINGGY_TOKEN: ${{ secrets.PINGGY_TOKEN }}
+  EMAIL: ${{ secrets.EMAIL }}
+  GH_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+  SECURE_PASSWORD: ${{ secrets.RDP_PASSWORD }}
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: runneradmin
+    runs-on: windows-latest
+    steps:
+    - name: Git check
+      run: |
+        git --version
+    - name: Setup MozillaBuild
+      run: |
+        aria2c https://ftp.mozilla.org/pub/mozilla/libraries/win32/MozillaBuildSetup-Latest.exe
+        aria2c https://github.com/notepad-plus-plus/notepad-plus-plus/releases/download/v8.9.2/npp.8.9.2.Installer.x64.exe
+        start /W MozillaBuildSetup-Latest.exe /S
+        start /W npp.8.9.2.Installer.x64.exe /S
+        cmd /c C:\mozilla-build\start-shell.bat
+        erase MozillaBuildSetup-Latest.exe
+      shell: cmd
+    - name: Add mercurial to PATH
+      shell: cmd
+      run: |
+        C:\mozilla-build\python3\python.exe -m pip uninstall mercurial -y || ver > nul
+        C:\mozilla-build\python3\python.exe -m pip install mercurial --no-cache-dir --force-reinstall
+        echo C:\mozilla-build\python3\Scripts>> %GITHUB_PATH%
+        echo C:\mozilla-build\bin>> %GITHUB_PATH%
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ github.head_ref }}
+        fetch-depth: 0
+    - name: Add MSBuild to PATH
+      uses: microsoft/setup-msbuild@v2
+    - name: Enable Developer Command Prompt
+      uses: ilammy/msvc-dev-cmd@v1.13.0
+      with:
+        arch: amd64
+    - name: Download extra software
+      run: |
+        aria2c https://download.sysinternals.com/files/SysinternalsSuite.zip
+        7z x SysinternalsSuite.zip -y
+      shell: bash
+    - name: Apply preferred Explorer settings
+      run: |
+        REG ADD "HKEY_LOCAL_MACHINE\SOFTWARE\AppVeyor\Build Agent\State" /V GetSources /T REG_SZ /D true /F
+        REG ADD "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer" /V EnableAutoTray /T REG_DWORD /D 0 /F
+        REG ADD HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced /v HideFileExt /t REG_DWORD /d 0 /f
+        REG ADD HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced /v ShowSuperHidden /t REG_DWORD /d 0 /f
+        REG ADD HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced /v Hidden /t REG_DWORD /d 1 /f
+        REG ADD HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced /v ShowSecondsInSystemClock /t REG_DWORD /d 1 /f
+        REG ADD "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Lsa" /v LimitBlankPasswordUse /t REG_DWORD /d 0 /f
+        REG ADD "HKCU\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32" /f /ve
+        Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize -Name SystemUsesLightTheme -Value 0
+        Set-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize -Name AppsUseLightTheme -Value 0
+        Set-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer -Name "ShowRecent" -Value 0
+        Set-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer -Name "ShowFrequent" -Value 0
+        Set-ItemProperty -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer -Name "ShowCloudFiles" -Value 0
+        Set-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name WallPaper -Value ""
+        Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Wallpapers" -Name BackgroundType -Value 1
+        Set-ItemProperty -Path "HKCU:\Control Panel\Colors" -Name Background -Value "0 0 0"
+        Stop-Process -Name explorer -Force; Start-Process explorer.exe
+        net stop audiosrv
+    - name: Disable password complexity
+      shell: cmd
+      run: |
+        secedit /export /cfg %TEMP%\secconfig.cfg
+        powershell -Command "(GC %TEMP%\secconfig.cfg) -replace 'PasswordComplexity = 1', 'PasswordComplexity = 0' | Out-File %TEMP%\secconfig.cfg -Encoding ascii"
+        powershell -Command "(GC %TEMP%\secconfig.cfg) -replace 'MinimumPasswordLength = \d+', 'MinimumPasswordLength = 0' | Out-File %TEMP%\secconfig.cfg -Encoding ascii"
+        secedit /configure /db %windir%\security\local.sdb /cfg %TEMP%\secconfig.cfg /areas SECURITYPOLICY
+        gpupdate /force
+    - name: Enable Remote Desktop
+      run: | 
+        Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server" -name "fDenyTSConnections" -Value 0
+        Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+        Enable-NetFirewallRule -DisplayName "Remote Desktop - User Mode (TCP-in)"
+        netsh advfirewall firewall set rule group="Remote Desktop" new enable=yes
+        net localgroup "Remote Desktop Users" runneradmin /add
+        Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" -name "UserAuthentication" -Value 0
+        Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Lsa" -Name "LimitBlankPasswordUse" -Value 0
+    - name: Make tunnel
+      run: |
+        START /B files/tunnel.bat
+      shell: cmd
+    - name: Display remote desktop connection for debug
+      run: |
+        if [ -z "$SECURE_PASSWORD" ]; then
+           echo "ERROR: RDP_PASSWORD secret is empty!"
+           exit 1
+        fi
+        FULL_SHA="${{ github.sha }}"
+        SHORT_SHA="${FULL_SHA:0:7}"
+        SECPW2="${SHORT_SHA}"
+        net user runneradmin "$SECURE_PASSWORD"
+        net user "runneruser" "$SECPW2" /add
+        net localgroup Administrators "runneruser" /add || true
+        net localgroup "Remote Desktop Users" "runneruser" /add || true
+        echo "=========================================="
+        ssh -p 443 -o StrictHostKeyChecking=no -o ServerAliveInterval=30 \
+            -L4300:localhost:4300 -R0:127.0.0.1:3389 tcp@ap.free.pinggy.io > /dev/null 2>&1 &
+        sleep 10
+        TUNNEL_URL=$(curl -s http://localhost:4300/urls | head -n 1)
+        echo "PINGGY CONNECTION: $TUNNEL_URL"
+        echo "=========================================="
+        echo "USER: runneradmin" "$SECURE_PASSWORD"
+        echo "USER: runneruser" "$SECPW2"
+        echo "=========================================="
+      shell: bash
+    - name: Pause Build
+      if: github.event.inputs.debug != 'false'
+      run: |
+        $PauseBuild = $true;
+        if($PauseBuild){
+        $path = "$($env:USERPROFILE)\Desktop\Delete me to continue build.txt"
+        # create "lock" file.
+        Set-Content -Path $path -Value ''    
+        Write-Warning "Build paused. To resume it, open a RDP session, delete 'Delete me to continue build.txt' file on Desktop."
+        # wait until "lock" file is deleted by user.
+        while(Test-Path $path) {
+          Start-Sleep -Seconds 1
+        }
+        Write-Host "Build lock file has been deleted. Resuming build."}
+      shell: powershell

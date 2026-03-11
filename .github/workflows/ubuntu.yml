@@ -1,0 +1,111 @@
+name: Build on Ubuntu
+env:
+  GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+  CARGO_TERM_COLOR: always
+
+on:
+  workflow_dispatch:
+  
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+  
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Build
+    steps:
+    - name: Update components
+      shell: bash
+      run: |
+        sudo timedatectl set-timezone Asia/Manila
+        sudo find /etc/apt/ -type f -name "*.list" -o -name "*.sources" | xargs sudo sed -i 's|http://azure.|http://|g'
+        sudo chmod 0644 /boot/vmlinuz*
+        sudo chmod +r /boot/vmlinuz-*
+        sudo add-apt-repository universe
+        sudo apt-get update && sudo sudo apt-get upgrade && sudo apt install -y p7zip-full curl python3 python3-full python3-pip mercurial python3-venv git nsis zip unzip msitools git watchman mercurial screenfetch
+        source /etc/os-release
+        sudo systemctl daemon-reload
+
+    - name: Install Mercurial
+      run: |
+        screenfetch
+        python -m pip install --upgrade pip
+        pip install --upgrade mercurial
+        python3 -m pip install mercurial --no-cache-dir --force-reinstall
+        echo 'export PATH="'"$(python3 -m site --user-base)"'/bin:$PATH"' >> $GITHUB_PATH
+        hg version
+        echo -e "[extensions]\nfsmonitor =\n[worker]\nenabled = True\nnumcpus = 4\n" > ~/.hgrc
+        hg debugextensions
+        hg config worker
+
+    - name: Clone repository
+      run: |
+        hg clone --stream https://hg.mozilla.org/mozilla-unified ../mozilla-unified
+        ls -alh
+        cd ../mozilla-unified
+        ls -alh
+        
+    - name: Build
+      run: |
+        cd ../mozilla-unified
+        hg pull && hg update
+#        ./mach bootstrap --application-choice=browser
+#        echo "mk_add_options MOZ_OBJDIR=@TOPSRCDIR@/obj-x86_64-pc-mingw32" > .mozconfig
+#        echo "ac_add_options --with-ccache=sccache" >> .mozconfig
+#        echo "ac_add_options --target=x86_64-pc-mingw32" >> ./.mozconfig
+#        echo "ac_add_options --with-branding=browser/branding/official" >> .mozconfig
+#        echo "ac_add_options --enable-release" >> .mozconfig
+#        echo "ac_add_options --enable-optimize" >> .mozconfig
+#        echo "ac_add_options --disable-debug-symbols" >> .mozconfig
+#        echo "ac_add_options --disable-tests" >> .mozconfig
+#        echo "ac_add_options --disable-debug" >> .mozconfig
+#        echo "ac_add_options --disable-updater" >> .mozconfig
+#        echo "ac_add_options --disable-crashreporter" >> .mozconfig
+#        export MOZCONFIG=.mozconfig
+#        ./mach bootstrap --application-choice=browser
+#        ./mach clobber
+#        ./mach build
+#        ./mach package
+
+#    - name: Upload a Build Artifact
+#      uses: actions/upload-artifact@v4
+#      with:
+#        name: installer
+#        path: |
+#          **/obj-x86_64-pc-mingw32/dist/*.installer.exe
+        
+#    - name: Bootstrap a copy of the Firefox source code
+#      run: |
+#        cd ..
+#        rm -rf mozilla-unified
+#        curl https://hg-edge.mozilla.org/mozilla-central/raw-file/default/python/mozboot/bin/bootstrap.py -O
+#        python3 bootstrap.py --no-interactive --application-choice browser
+#        mv firefox mozilla-unified
+#        ls -alh
+
+    - name: Commit
+      run: |
+        git clone https://${{ env.GITHUB_TOKEN }}@github.com/test6744/firefox.git
+        7z a -tzip "tmp.zip" -r "firefox/.git" -mx0
+        rm -rf firefox
+        mkdir -p firefox
+        rsync -av --exclude='.hg*' --exclude='.git*' ./mozilla-unified/ ./firefox/
+        unzip "tmp.zip" -d "firefox"
+        cd firefox
+        if [ ! -d ".git" ]; then
+          git init
+          git remote add origin https://${{ env.GITHUB_TOKEN }}@github.com/test6744/firefox.git
+          git remote add upstream https://github.com/mozilla-firefox/firefox.git
+        fi
+        git config --local user.email "234492490+test6744@users.noreply.github.com"
+        git config --local user.name "test6744"
+        git config push.showProgress false
+        git config --global core.autocrlf input
+        git add .
+        if git diff --staged --quiet; then
+          echo "No new data to push."
+        else
+          git commit -m "Update: Added new build data $(date +'%Y-%m-%d')"
+          git push origin release
+        fi

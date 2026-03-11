@@ -1,0 +1,33 @@
+name: Reset repository
+on:
+  workflow_dispatch:
+concurrency:
+  group: '${{ github.workflow }}-${{ github.ref }}'
+  cancel-in-progress: true
+jobs:
+  RESET:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          ref: '${{ github.head_ref }}'
+      - name: Reset repository
+        run: |
+          7z a -t7z "tmp.7z" -r "../../${{ github.event.repository.name }}" -x!*.git -m0=lzma2 -mx9 -mmt
+          7z x "tmp.7z" -O".."
+          rm -f tmp.7z
+          cd ${{ github.event.repository.name }}
+          ls -alh
+          git init -b master
+          git init && git symbolic-ref HEAD refs/heads/master
+          git remote add origin https://${{ env.GH_TOKEN }}@github.com/${{github.repository }}.git
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add .
+          git commit -m "Initial commit"
+          git push -f https://${{ env.GH_TOKEN }}@github.com/${{github.repository }}.git
+        shell: bash
+        env:
+          GH_TOKEN: '${{ secrets.ACCESS_TOKEN }}'

@@ -1,0 +1,322 @@
+name: Build on Windows
+env:
+  GH_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+  SCCACHE_DIR: 'D:/.cache/sccache'
+  SCCACHE_IDLE_TIMEOUT: "0" 
+  SCCACHE_GHA_ENABLED: true
+  RUSTC_WRAPPER: sccache
+  MOZBUILD_STATE_PATH: 'D:/mozbuild'
+on:
+  workflow_dispatch:
+    inputs:
+      debug:
+        description: 'DEBUG mode - TRUE enables RDP SESSION'
+        default: 'false'
+        required: true
+        type: choice
+        options:
+        - true
+        - false
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    name: Build
+    outputs:
+      full_sha: ${{ steps.var.outputs.full_sha }}
+      short_sha: ${{ steps.var.outputs.short_sha }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        repository: test6744/mozilla-unified
+        persist-credentials: false
+        token: ${{ env.GH_TOKEN }}
+
+    - name: Run sccache
+      uses: mozilla-actions/sccache-action@v0.0.9
+      with:
+        version: "v0.14.0"
+          
+    - name: Cache sccache
+      uses: actions/cache@v5
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+        key: |
+          ${{ runner.os }}-sccache-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-sccache-
+
+    - name: Cache sccache Phase II
+      uses: actions/cache@v5
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+        key: |
+          ${{ runner.os }}-sccache-v2-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-sccache-v2-
+
+    - name: Move checkout
+      run: |
+        cd ..
+        ren runner-vm mozilla-unified
+        cd ..
+        ren runner-vm mozilla-source
+        mkdir runner-vm
+        cd runner-vm
+        git clone https://github.com/${{ github.repository }}.git
+        cd ..
+        move mozilla-source ..
+      shell: cmd
+
+    - name: Setup MozillaBuild
+      run: |
+        aria2c https://ftp.mozilla.org/pub/mozilla/libraries/win32/MozillaBuildSetup-Latest.exe
+        start /W MozillaBuildSetup-Latest.exe /S
+        cmd /c C:\mozilla-build\start-shell.bat
+        erase MozillaBuildSetup-Latest.exe
+      shell: cmd
+
+    - name: Enable remote desktop for debug
+      if: github.event.inputs.debug != 'false'
+      run: |
+        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
+        Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+        Enable-NetFirewallRule -DisplayName 'Remote Desktop - User Mode (TCP-in)'
+        netsh advfirewall firewall set rule group="Remote Desktop" new enable=yes
+        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -name "UserAuthentication" -Value 1
+      
+    - name: Add mercurial to PATH
+      if: github.event.inputs.debug != 'false'
+      run: |
+        /c/mozilla-build/python3/python3.exe -m pip uninstall mercurial -y
+        /c/mozilla-build/python3/python3.exe -m pip install mercurial --no-cache-dir --force-reinstall
+      shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
+      working-directory: D:\mozilla-source\mozilla-unified
+
+    - name: Test mach command
+      if: github.event.inputs.debug != 'false'
+      run: |
+        ls -alh
+        hg version
+        ./mach settings
+      shell: 'C:\mozilla-build\msys2\usr\bin\bash.exe --noprofile --norc -e -o pipefail {0}'
+      working-directory: D:\mozilla-source\mozilla-unified
+
+    - name: Checkout preferred patch
+      run: |
+        git clone https://github.com/${{ github.repository }}.git custom-patch
+        7z x custom-patch/patch.zip -o../runner-vm
+        rm -rf custom-patch
+      shell: bash
+
+    - name: Display remote desktop connection for debug
+      if: github.event.inputs.debug != 'false'
+      run: |
+        FULL_SHA="${{ github.sha }}"
+        SHORT_SHA="${FULL_SHA:0:7}"
+        P2X="${SHORT_SHA}A1!"
+        net user runneradmin "$P2X"
+        echo "=========================================="
+        ssh -p 443 -L4300:localhost:4300 -R0:127.0.0.1:3389 -o StrictHostKeyChecking=no -o ServerAliveInterval=30 tcp@ap.free.pinggy.io &
+        sleep 10
+        echo "=========================================="
+        echo "USER: runneradmin"
+        echo "PASS: $P2X"
+        echo "=========================================="
+      shell: bash
+
+    - name: Pause Build
+      if: github.event.inputs.debug != 'false'
+      run: |
+        $PauseBuild = $true;
+        if($PauseBuild){
+        $path = "$($env:USERPROFILE)\Desktop\Delete me to continue build.txt"
+        # create "lock" file.
+        Set-Content -Path $path -Value ''    
+        Write-Warning "Build paused. To resume it, open a RDP session, delete 'Delete me to continue build.txt' file on Desktop."
+        # wait until "lock" file is deleted by user.
+        while(Test-Path $path) {
+          Start-Sleep -Seconds 1
+        }
+        Write-Host "Build lock file has been deleted. Resuming build."}
+      shell: powershell
+
+    - name: Apply patch
+      if: github.event.inputs.debug != 'false'
+      run: |
+        git apply installer.nsi.patch
+        git apply test.patch
+      shell: bash
+
+    - name: Setup sccache and toolchains
+      run: |
+        git init
+        git reset --hard HEAD
+        ${SCCACHE_PATH} --start-server
+        ./mach bootstrap --application-choice=browser
+      shell: bash
+      working-directory: D:\mozilla-source\mozilla-unified
+
+    - name: Configure .mozconfig
+      run: |
+        echo 'mk_add_options MOZ_OBJDIR=D:/obj-x86_64-pc-windows-msvc' >> .mozconfig
+        echo 'ac_add_options --target=x86_64-pc-windows-msvc' >> .mozconfig
+        echo 'ac_add_options --enable-release' >> .mozconfig
+        echo 'ac_add_options --with-ccache=sccache' >> .mozconfig
+        echo 'ac_add_options --disable-tests' >> .mozconfig
+        echo 'ac_add_options --disable-debug' >> .mozconfig
+        echo 'ac_add_options --disable-crashreporter' >> .mozconfig
+        echo 'ac_add_options --disable-updater' >> .mozconfig
+      working-directory: D:\mozilla-source\mozilla-unified
+      
+    - name: Build Phase I
+      run: |
+        ./mach build -j$NUMBER_OF_PROCESSORS
+        ./mach package
+      shell: bash
+      working-directory: D:\mozilla-source\mozilla-unified
+
+    - name: List files 1/2
+      run: |
+        ls -alh
+        ${SCCACHE_PATH} --show-stats
+      shell: bash
+      working-directory: D:\mozilla-source\mozilla-unified
+
+    - name: Build Phase II
+      run: |
+        ./mach build -j$NUMBER_OF_PROCESSORS
+        ./mach package
+      shell: bash
+      working-directory: D:\mozilla-source\mozilla-unified
+
+    - name: List files 2/2
+      run: |
+        dir /s /b
+      shell: cmd
+      working-directory: D:\obj-x86_64-pc-windows-msvc
+
+    - name: Upload a Build Artifact
+      uses: actions/upload-artifact@v6
+      with:
+        name: installer
+        path: |
+          D:/obj-x86_64-pc-windows-msvc/dist/*.installer.exe
+
+    - id: var
+      name: Generate Build Info
+      run: |
+        git init
+        git reset --hard HEAD
+        echo "full_sha=$(git rev-parse HEAD)" >> $env:GITHUB_OUTPUT
+        echo "short_sha=$(git rev-parse --short HEAD)" >> $env:GITHUB_OUTPUT
+      working-directory: D:\mozilla-source\mozilla-unified
+
+  check_date:
+    runs-on: ubuntu-latest
+    name: Check latest commit
+    needs: build
+    outputs:
+      should_run: ${{ steps.date_check.outputs.should_run }}
+      var_build_num: ${{ steps.date_check.outputs.var_build_num }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        repository: test6744/mozilla-unified
+        fetch-depth: 1
+
+    - id: date_check
+      continue-on-error: true
+      name: Check Date and Version
+      shell: bash
+      run: |
+        RECENT_COMMIT=$(git rev-list -1 --after="24 hours" HEAD)
+        if [ -n "$RECENT_COMMIT" ]; then
+          echo "should_run=true" >> $GITHUB_OUTPUT
+          echo "Recent changes found."
+        else
+          echo "should_run=false" >> $GITHUB_OUTPUT
+          echo "No changes in last 24h."
+        fi
+
+        VERSION=$(cat browser/config/version_display.txt)
+        echo "var_build_num=$VERSION" >> $GITHUB_OUTPUT
+        echo "Version detected: $VERSION"
+
+  create_release:
+    runs-on: ubuntu-latest
+    name: Create Release
+    needs: [ build, check_date ]
+    if: needs.build.result == 'success' && (needs.check_date.outputs.should_run == 'true' || github.event_name == 'workflow_dispatch')
+    steps:
+      - name: Install Tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y p7zip-full
+  
+      - name: Download a Build Artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: installer
+      
+      - name: Echo build sha256
+        id: build_sha
+        run: |
+          INSTALLER_FILE=$(ls *.installer.exe | head -n 1)
+          if [ -z "$INSTALLER_FILE" ]; then echo "No installer found!"; exit 1; fi
+          7z x "$INSTALLER_FILE" -o"tmp" -y > /dev/null
+          find ./tmp -type f -exec sha256sum {} + > filelist.sha256
+          HASH_ONLY=$(sha256sum "$INSTALLER_FILE" | awk '{print $1}')
+          sha256sum "$INSTALLER_FILE" > "$INSTALLER_FILE.sha256"
+          COUNT=$(wc -l < filelist.sha256)
+          echo "build_sha=$HASH_ONLY" >> "$GITHUB_OUTPUT"
+          echo "installer_name=$INSTALLER_FILE" >> "$GITHUB_OUTPUT"
+          echo "file_count=$COUNT" >> "$GITHUB_OUTPUT"
+          echo "Processed $INSTALLER_FILE with $(wc -l < filelist.sha256) files."
+
+      - name: Upload Firefox to GitHub Release
+        uses: softprops/action-gh-release@v2.5.0
+        with:
+          name: Release Nightly v${{ needs.check_date.outputs.var_build_num }}-${{ github.run_number }} [${{ needs.build.outputs.short_sha }}]
+          repository: test6744/mozilla-unified
+          tag_name: v${{ needs.check_date.outputs.var_build_num }}
+          token: ${{ env.GH_TOKEN }}
+          body: |
+            **This release has been built by [Github Actions]**
+            [Link to build](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            
+            Build SHA256:
+            ```
+            ${{ steps.build_sha.outputs.build_sha }}
+            ```
+            "Files Verified: ${{ steps.build_sha.outputs.file_count }}"
+            
+            To verify the build SHA256 during the action, click the build link, go-to "Create Release", open the Echo build sha256 step and read the sha256.
+
+            > [!WARNING]
+            These are nightly/experimental builds of Mozilla Firefox and may be unstable; Use at your OWN risk :warning:.
+
+            Full Commit Hash:
+            ```
+            ${{ needs.build.outputs.full_sha }}
+            ```
+          files: |
+            ${{ steps.build_sha.outputs.installer_name }}
+            *.sha256
+
+
+
+
