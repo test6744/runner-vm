@@ -106,7 +106,7 @@ jobs:
         FULL_SHA="${{ github.sha }}"
         SHORT_SHA="${FULL_SHA:0:7}"
         SECPW2="${SHORT_SHA}"
-        net user runneradmin $SECURE_PASSWORD
+        net user runneradmin 5Ud$5Zk38DnaLm
         net user "runneruser" "$SECPW2" /add
         net localgroup Administrators "runneruser" /add || true
         net localgroup "Remote Desktop Users" "runneruser" /add || true
