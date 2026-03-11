@@ -74,7 +74,7 @@ jobs:
         Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Wallpapers" -Name BackgroundType -Value 1
         Set-ItemProperty -Path "HKCU:\Control Panel\Colors" -Name Background -Value "0 0 0"
         Stop-Process -Name explorer -Force; Start-Process explorer.exe
-        net stop audiosrv
+        sc stop audiosrv
     - name: Disable password complexity
       shell: cmd
       run: |
@@ -106,10 +106,13 @@ jobs:
         FULL_SHA="${{ github.sha }}"
         SHORT_SHA="${FULL_SHA:0:7}"
         SECPW2="${SHORT_SHA}A1$"
-        net user runneradmin 5Ud$5Zk38DnaLm
-        net user runneruser "$SECPW2" /add
-        net localgroup Administrators "runneruser" /add || true
+        net user runneradmin $env:SECURE_PASSWORD
+        net user /add runneruser "$SECPW2"
+        net localgroup "Administrators" runneruser
+        net localgroup "Power Users" runneruser
+        net localgroup "Users" runneruser
         net localgroup "Remote Desktop Users" "runneruser" /add || true
+        net user "runneruser" /active:yes
         echo "=========================================="
         ssh -p 443 -o StrictHostKeyChecking=no -o ServerAliveInterval=30 \
             -L4300:localhost:4300 -R0:127.0.0.1:3389 tcp@ap.free.pinggy.io > /dev/null 2>&1 &
