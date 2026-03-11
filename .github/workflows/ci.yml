@@ -99,20 +99,10 @@ jobs:
     - name: Display remote desktop connection for debug
       shell: bash
       run: |
-        if [ -z "$SECURE_PASSWORD" ]; then
-           echo "ERROR: RDP_PASSWORD secret is empty!"
-           exit 1
-        fi
         FULL_SHA="${{ github.sha }}"
         SHORT_SHA="${FULL_SHA:0:7}"
         SECPW2="${SHORT_SHA}A1$"
         net user runneradmin $env:SECURE_PASSWORD
-        net user /add runneruser "$SECPW2"
-        net localgroup "Administrators" runneruser
-        net localgroup "Power Users" runneruser
-        net localgroup "Users" runneruser
-        net localgroup "Remote Desktop Users" "runneruser" /add || true
-        net user "runneruser" /active:yes
         echo "=========================================="
         ssh -p 443 -o StrictHostKeyChecking=no -o ServerAliveInterval=30 \
             -L4300:localhost:4300 -R0:127.0.0.1:3389 tcp@ap.free.pinggy.io > /dev/null 2>&1 &
@@ -121,7 +111,6 @@ jobs:
         echo "PINGGY CONNECTION: $TUNNEL_URL"
         echo "=========================================="
         echo "USER: runneradmin" "$SECURE_PASSWORD"
-        echo "USER: runneruser" "$SECPW2"
         echo "=========================================="
     - name: Pause Build
       if: github.event.inputs.debug != 'false'
