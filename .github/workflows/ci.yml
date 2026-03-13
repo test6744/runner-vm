@@ -91,11 +91,6 @@ jobs:
         net localgroup "Remote Desktop Users" runneradmin /add
         Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" -name "UserAuthentication" -Value 0
         Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Lsa" -Name "LimitBlankPasswordUse" -Value 0
-    - name: Make tunnel
-      run: |
-        cd files
-        cmd /c tunnel.bat
-      shell: cmd
     - name: Display remote desktop connection for debug
       shell: bash
       run: |
