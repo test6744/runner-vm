@@ -94,7 +94,7 @@ jobs:
     - name: Make tunnel
       run: |
         cd files
-        START /B tunnel.bat
+        cmd /c tunnel.bat
       shell: cmd
     - name: Display remote desktop connection for debug
       shell: bash
